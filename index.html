@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Your Name — Portfolio</title>
+  <meta name="description" content="Personal website and portfolio of Your Name." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0b0d10; --card:#12161b; --text:#e6eef8; --muted:#9fb2c8; --accent:#7aa2ff; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background:linear-gradient(120deg,#0b0d10,#0f1320 60%); }
+    a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .wrap { max-width:1000px; margin:0 auto; padding:24px; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0 8px; position:sticky; top:0; background:rgba(11,13,16,0.75); backdrop-filter: blur(8px); border-bottom:1px solid #1b2230; }
+    nav a { margin:0 10px; font-weight:600; }
+    .hero { padding:56px 0 24px; display:grid; grid-template-columns:1.2fr 1fr; gap:28px; align-items:center; }
+    .hero h1 { margin:0 0 12px; font-size:44px; line-height:1.1; }
+    .hero p { color:var(--muted); margin:0 0 20px; font-size:18px; }
+    .btn { display:inline-block; padding:10px 16px; border-radius:10px; background:var(--accent); color:#0b0d10; font-weight:700; }
+    .grid { display:grid; gap:16px; }
+    @media (min-width:800px){ .grid-3{ grid-template-columns:repeat(3,1fr); } .grid-2{ grid-template-columns:repeat(2,1fr);} }
+    .card { background:var(--card); border:1px solid #1b2230; border-radius:16px; padding:16px; box-shadow: 0 6px 20px rgba(0,0,0,.15); }
+    .card h3 { margin:0 0 8px; }
+    section { padding:28px 0; }
+    footer { color:var(--muted); padding:28px 0 60px; text-align:center; border-top:1px solid #1b2230; margin-top:28px; }
+    .tag { display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px; background:#0b0d10; border:1px solid #1b2230; color:var(--muted); margin-right:6px; }
+    img { width:100%; border-radius:12px; display:block; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div><strong>Your Name</strong></div>
+      <nav>
+        <a href="#projects">Projects</a>
+        <a href="#experience">Experience</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <h1>Hi, I’m Your Name 👋</h1>
+          <p>CS @ Your School • Interests: ML, Web, Systems. I build useful things with Java, Python, and JS.</p>
+          <p>
+            <a class="btn" href="resume.pdf">Download Resume</a>
+            &nbsp;&nbsp;<a href="https://github.com/yourhandle">GitHub</a> ·
+            <a href="https://www.linkedin.com/in/yourhandle/">LinkedIn</a> ·
+            <a href="mailto:you@email.com">Email</a>
+          </p>
+        </div>
+        <div class="card"><img alt="Preview" src="https://picsum.photos/800/500" /></div>
+      </section>
+
+      <section id="projects">
+        <h2>Projects</h2>
+        <div class="grid grid-3">
+          <article class="card">
+            <h3>Movie Store</h3>
+            <p class="muted">Django e-commerce app with auth, cart, and Stripe test checkout.</p>
+            <div>
+              <span class="tag">Django</span><span class="tag">Postgres</span><span class="tag">Docker</span>
+            </div>
+            <p><a href="https://github.com/yourhandle/movie-store">Code</a> · <a href="#">Live demo</a></p>
+          </article>
+          <article class="card">
+            <h3>YouTube Trending ML</h3>
+            <p>Built a model to predict CTR using title & thumbnail features.</p>
+            <div>
+              <span class="tag">PyTorch</span><span class="tag">scikit-learn</span><span class="tag">Pandas</span>
+            </div>
+            <p><a href="https://github.com/yourhandle/yt-trending-ml">Code</a></p>
+          </article>
+          <article class="card">
+            <h3>Time Map</h3>
+            <p>Full-stack time management app with calendar sync and reminders.</p>
+            <div>
+              <span class="tag">React</span><span class="tag">FastAPI</span><span class="tag">Redis</span>
+            </div>
+            <p><a href="https://github.com/yourhandle/time-map">Code</a> · <a href="#">Live demo</a></p>
+          </article>
+        </div>
+      </section>
+
+      <section id="experience">
+        <h2>Experience</h2>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Software Intern — Company</h3>
+            <p><em>Jun–Aug 2025 · Remote</em></p>
+            <ul>
+              <li>Built X that improved Y by Z%.</li>
+              <li>Shipped feature A to N users.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Teaching Assistant — Course</h3>
+            <p><em>Spring 2025</em></p>
+            <ul>
+              <li>Led weekly labs and authored auto-grading tests.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact">
+        <h2>Contact</h2>
+        <div class="card">
+          <p>Best way to reach me is <a href="mailto:you@email.com">email</a>. I’m open to SWE/ML internships.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      © <span id="year"></span> Your Name · Built with HTML/CSS · Hosted on GitHub Pages
+    </footer>
+  </div>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

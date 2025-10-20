@@ -13,7 +13,7 @@
     body { margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background:linear-gradient(120deg,#0b0d10,#0f1320 60%); }
     a { color:var(--accent); text-decoration:none; }
     a:hover { text-decoration:underline; }
-    .wrap { max-width:1000px; margin:0 auto; padding:24px; }
+    .wrap { max-width:1000px; margin:0 auto; padding:24px; position:relative; z-index:1; }
     header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0 8px; position:sticky; top:0; background:rgba(11,13,16,0.75); backdrop-filter: blur(8px); border-bottom:1px solid #1b2230; }
     nav a { margin:0 10px; font-weight:600; }
     .hero { padding:56px 0 24px; display:grid; grid-template-columns:1.2fr 1fr; gap:28px; align-items:center; }
@@ -28,47 +28,30 @@
     footer { color:var(--muted); padding:28px 0 60px; text-align:center; border-top:1px solid #1b2230; margin-top:28px; }
     .tag { display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px; background:#0b0d10; border:1px solid #1b2230; color:var(--muted); margin-right:6px; }
     img { width:100%; border-radius:12px; display:block; }
+
     /* Background starfield canvas */
-  #stars{position:fixed; inset:0; z-index:0; pointer-events:none;}
-  /* Lift site content above the canvas */
-  .wrap{position:relative; z-index:1;}
-  /* Background starfield canvas */
-  #stars{position:fixed; inset:0; z-index:0; pointer-events:none;}
-  /* Lift site content above the canvas */
-  .wrap{position:relative; z-index:1;}
+    #stars{position:fixed; inset:0; z-index:0; pointer-events:none;}
+    /* Lift site content above the canvas */
+    .wrap{position:relative; z-index:1;}
 
-  /* Chat widget styles */
-  .chat-toggle{position:fixed; right:18px; bottom:18px; z-index:3; border:none; background:var(--accent); color:#0b0d10; font-weight:800; padding:12px 14px; border-radius:999px; box-shadow:0 10px 24px rgba(0,0,0,.35); cursor:pointer;}
-  .chatbox{position:fixed; right:18px; bottom:76px; z-index:3; width:min(360px, calc(100vw - 36px)); background:var(--card); border:1px solid #1b2230; border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,.45); padding:14px;}
-  .chatbox-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
-  .chatbox-header button{background:transparent; border:1px solid #1b2230; color:var(--muted); border-radius:8px; padding:4px 8px; cursor:pointer;}
-  #chat-form label{display:block; margin:8px 0;}
-  #chat-form span{display:block; font-size:12px; color:var(--muted); margin-bottom:6px;}
-  #chat-form input, #chat-form textarea{width:100%; padding:10px; border-radius:10px; border:1px solid #1b2230; background:#0b0d10; color:var(--text);}  
-  .chat-actions{display:flex; align-items:center; gap:10px;}
-  .chat-actions .hint{color:var(--muted);} 
-  /* Background starfield canvas */
-  #stars{position:fixed; inset:0; z-index:0; pointer-events:none;}
-  /* Lift site content above the canvas */
-  .wrap{position:relative; z-index:1;}
-
-  /* Chat widget styles */
-  .chat-toggle{position:fixed; right:18px; bottom:18px; z-index:3; border:none; background:var(--accent); color:#0b0d10; font-weight:800; padding:12px 14px; border-radius:999px; box-shadow:0 10px 24px rgba(0,0,0,.35); cursor:pointer;}
-  .chatbox{position:fixed; right:18px; bottom:76px; z-index:3; width:min(360px, calc(100vw - 36px)); background:var(--card); border:1px solid #1b2230; border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,.45); padding:14px;}
-  .chatbox-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
-  .chatbox-header button{background:transparent; border:1px solid #1b2230; color:var(--muted); border-radius:8px; padding:4px 8px; cursor:pointer;}
-  #chat-form label{display:block; margin:8px 0;}
-  #chat-form span{display:block; font-size:12px; color:var(--muted); margin-bottom:6px;}
-  #chat-form input, #chat-form textarea{width:100%; padding:10px; border-radius:10px; border:1px solid #1b2230; background:#0b0d10; color:var(--text);}  
-  .chat-actions{display:flex; align-items:center; gap:10px;}
-  .chat-actions .hint{color:var(--muted);} 
-  /* Toast */
-  .toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#0b0d10; border:1px solid #1b2230; color:var(--text); padding:10px 14px; border-radius:12px; box-shadow:0 10px 24px rgba(0,0,0,.35); z-index:4;}
-</style>
+    /* Chat widget styles */
+    .chat-toggle{position:fixed; right:18px; bottom:18px; z-index:3; border:none; background:var(--accent); color:#0b0d10; font-weight:800; padding:12px 14px; border-radius:999px; box-shadow:0 10px 24px rgba(0,0,0,.35); cursor:pointer;}
+    .chatbox{position:fixed; right:18px; bottom:76px; z-index:3; width:min(360px, calc(100vw - 36px)); background:var(--card); border:1px solid #1b2230; border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,.45); padding:14px;}
+    .chatbox-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+    .chatbox-header button{background:transparent; border:1px solid #1b2230; color:var(--muted); border-radius:8px; padding:4px 8px; cursor:pointer;}
+    #chat-form label{display:block; margin:8px 0;}
+    #chat-form span{display:block; font-size:12px; color:var(--muted); margin-bottom:6px;}
+    #chat-form input, #chat-form textarea{width:100%; padding:10px; border-radius:10px; border:1px solid #1b2230; background:#0b0d10; color:var(--text);}  
+    .chat-actions{display:flex; align-items:center; gap:10px;}
+    .chat-actions .hint{color:var(--muted);} 
+    /* Toast */
+    .toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#0b0d10; border:1px solid #1b2230; color:var(--text); padding:10px 14px; border-radius:12px; box-shadow:0 10px 24px rgba(0,0,0,.35); z-index:4;}
+  </style>
 </head>
 <body>
   <!-- Animated starfield background -->
   <canvas id="stars" aria-hidden="true"></canvas>
+
   <div class="wrap">
     <header>
       <div><a href="https://www.linkedin.com/in/jing-xuan-liu/" target="_blank" rel="noopener"><strong>Jingxuan Liu</strong></a></div>
@@ -98,7 +81,7 @@
         <div class="grid grid-3">
           <article class="card">
             <h3>Time Map — Task & Time Manager</h3>
-            <p class="muted">Full‑stack mobile website using Django/Python with user auth and MySQL.</p>
+            <p class="muted">Full-stack mobile website using Django/Python with user auth and MySQL.</p>
             <div>
               <span class="tag">Django</span><span class="tag">Python</span><span class="tag">MySQL</span>
             </div>
@@ -107,7 +90,7 @@
 
           <article class="card">
             <h3>Movie Store — Purchasing App</h3>
-            <p>Cross‑platform movie purchasing app with secure auth and payment processing.</p>
+            <p>Cross-platform movie purchasing app with secure auth and payment processing.</p>
             <div>
               <span class="tag">Django</span><span class="tag">Python</span><span class="tag">MySQL</span>
             </div>
@@ -116,7 +99,7 @@
 
           <article class="card">
             <h3>Interactive 2D Game</h3>
-            <p>Built core mechanics and gameplay; tested for cross‑platform compatibility.</p>
+            <p>Built core mechanics and gameplay; tested for cross-platform compatibility.</p>
             <div>
               <span class="tag">C</span><span class="tag">Unity</span>
             </div>
@@ -131,13 +114,6 @@
             </div>
             <p><a href="https://github.com/jingxuanliu1">Code</a></p>
           </article>
-        </div>
-      </section>
-
-      <section id="contact">
-        <h2>Contact</h2>
-        <div class="card">
-          <p>Best way to reach me is <a href="mailto:jingxuanliu317@gmail.com">email</a>. I’m open to SWE/ML internships.</p>
         </div>
       </section>
     </main>
@@ -155,8 +131,8 @@
           <input type="text" id="c-name" name="name" placeholder="Your name" required>
         </label>
         <label>
-          <span>Email</span>
-          <input type="email" id="c-email" name="email" placeholder="you@email.com" required>
+          <span>Email (optional)</span>
+          <input type="email" id="c-email" name="email" placeholder="you@email.com">
         </label>
         <label>
           <span>Message</span>
@@ -164,7 +140,7 @@
         </label>
         <div class="chat-actions">
           <button type="submit" class="btn">Send</button>
-          <small class="hint">Sends via your email app · no sign‑in needed</small>
+          <small class="hint">Sends to the site owner (no login needed)</small>
         </div>
       </form>
     </div>
@@ -173,11 +149,12 @@
       © <span id="year"></span> Jingxuan Liu · Built with HTML/CSS · Hosted on GitHub Pages
     </footer>
   </div>
+
   <script>
 // Footer year
 document.getElementById('year').textContent = new Date().getFullYear();
 
-// Animated starfield with CONSTELLATION links near the mouse — HiDPI & reduced‑motion friendly
+// Animated starfield with CONSTELLATION links near the mouse — HiDPI & reduced-motion friendly
 (function(){
   const canvas = document.getElementById('stars');
   const ctx = canvas.getContext('2d');
@@ -324,7 +301,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
     last = now;
     step(dt);
     draw();
-    requestAnimationFrame(loop); // always animate; slowed via SPEED_SCALE
+    requestAnimationFrame(loop); // always animate
   }
 
   window.addEventListener('resize', resize, { passive:true });
@@ -332,13 +309,14 @@ document.getElementById('year').textContent = new Date().getFullYear();
   requestAnimationFrame(loop);
 })();
 
-// Resume existence hint: swap to absolute root path and show alert if missing
-fetch('/resume.pdf', { method:'HEAD' }).then(r=>{ if(!r.ok){ console.warn('resume.pdf not found at site root'); } }).catch(()=>{});
-
 // Chat widget logic: submit via Form endpoint if configured, else mailto fallback
 (function(){
-  const FORM_ENDPOINT = "https://formspree.io/f/abcdwxyz"; // e.g., "https://formspree.io/f/abcdwxyz" (set this to enable direct send)
-  const DEST_EMAIL = "jingxuanliu317@gmail.com"; // mailto fallback target
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  // Set this to your Formspree/Getform endpoint to send directly to your email.
+  // Example: const FORM_ENDPOINT = "https://formspree.io/f/abcdwxyz";
+  const FORM_ENDPOINT = ""; // <-- PUT YOUR ENDPOINT HERE (leave empty to use mailto fallback)
+  const DEST_EMAIL = "jingxuanliu317@gmail.com"; // used for mailto fallback
+  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
   const toggle = document.getElementById('chat-toggle');
   const box = document.getElementById('chatbox');
@@ -353,11 +331,6 @@ fetch('/resume.pdf', { method:'HEAD' }).then(r=>{ if(!r.ok){ console.warn('resum
   honeypot.style.display = 'none';
   form.appendChild(honeypot);
 
-  function open(){ box.hidden=false; toggle.setAttribute('aria-expanded','true'); }
-  function close(){ box.hidden=true; toggle.setAttribute('aria-expanded','false'); }
-  toggle.addEventListener('click', ()=> box.hidden ? open() : close());
-  closeBtn.addEventListener('click', close);
-
   function toast(msg){
     const t = document.createElement('div');
     t.className = 'toast';
@@ -366,13 +339,21 @@ fetch('/resume.pdf', { method:'HEAD' }).then(r=>{ if(!r.ok){ console.warn('resum
     setTimeout(()=>{ t.remove(); }, 2600);
   }
 
+  function open(){ box.hidden=false; toggle.setAttribute('aria-expanded','true'); }
+  function close(){ box.hidden=true; toggle.setAttribute('aria-expanded','false'); }
+
+  toggle.addEventListener('click', ()=> box.hidden ? open() : close());
+  closeBtn.addEventListener('click', close);
+
   form.addEventListener('submit', async (e)=>{
     e.preventDefault();
     const name = (document.getElementById('c-name').value||'').trim();
-    const email = (document.getElementById('c-email').value||'').trim();
+    let email = (document.getElementById('c-email').value||'').trim();
     const msg = (document.getElementById('c-msg').value||'').trim();
-    if (!name || !email || !msg){ toast('Please fill out all fields.'); return; }
-    if (honeypot.value){ return; } // bot detected
+    if (!name || !msg){ toast('Please include your name and a message.'); return; }
+    if (honeypot.value){ return; } // bot
+
+    if (!email) email = 'Anonymous';
 
     // If a Form endpoint is configured, post directly (no mail client needed)
     if (FORM_ENDPOINT){
@@ -382,7 +363,7 @@ fetch('/resume.pdf', { method:'HEAD' }).then(r=>{ if(!r.ok){ console.warn('resum
           headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
           body: JSON.stringify({ name, email, message: msg, _subject: `Portfolio message from ${name}` })
         });
-        if (!res.ok){ throw new Error('Network response was not ok'); }
+        if (!res.ok) throw new Error('Network response was not ok');
         toast('Message sent ✔');
         form.reset();
         close();
@@ -391,29 +372,22 @@ fetch('/resume.pdf', { method:'HEAD' }).then(r=>{ if(!r.ok){ console.warn('resum
         toast('Send failed. Using email instead…');
         // fallback to mailto
         const subject = encodeURIComponent('Portfolio message from ' + name);
-        const body = encodeURIComponent(`From: ${name} <${email}>
-
-${msg}
-
-— Sent from jingxuanliu.com`);
+        const body = encodeURIComponent(`From: ${name} <${email}>\n\n${msg}\n\n— Sent from jingxuanliu.com`);
         window.location.href = `mailto:${DEST_EMAIL}?subject=${subject}&body=${body}`;
         close();
       }
     } else {
       // No endpoint set → open mail client (previous behavior)
       const subject = encodeURIComponent('Portfolio message from ' + name);
-      const body = encodeURIComponent(`From: ${name} <${email}>
-
-${msg}
-
-— Sent from jingxuanliu.com`);
+      const body = encodeURIComponent(`From: ${name} <${email}>\n\n${msg}\n\n— Sent from jingxuanliu.com`);
       window.location.href = `mailto:${DEST_EMAIL}?subject=${subject}&body=${body}`;
       close();
     }
   });
 })();
-</script>
+  </script>
 </body>
 </html>
+
 
 

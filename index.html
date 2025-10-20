@@ -28,9 +28,15 @@
     footer { color:var(--muted); padding:28px 0 60px; text-align:center; border-top:1px solid #1b2230; margin-top:28px; }
     .tag { display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px; background:#0b0d10; border:1px solid #1b2230; color:var(--muted); margin-right:6px; }
     img { width:100%; border-radius:12px; display:block; }
-  </style>
+    /* Background starfield canvas */
+  #stars{position:fixed; inset:0; z-index:0; pointer-events:none;}
+  /* Lift site content above the canvas */
+  .wrap{position:relative; z-index:1;}
+</style>
 </head>
 <body>
+  <!-- Animated starfield background -->
+  <canvas id="stars" aria-hidden="true"></canvas>
   <div class="wrap">
     <header>
       <div><a href="https://www.linkedin.com/in/jing-xuan-liu/" target="_blank" rel="noopener"><strong>Jingxuan Liu</strong></a></div>
@@ -108,7 +114,78 @@
       © <span id="year"></span> Jingxuan Liu · Built with HTML/CSS · Hosted on GitHub Pages
     </footer>
   </div>
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script>
+// Footer year
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// Animated starfield (falls from the sky)
+(function(){
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
+  let w, h, stars = [], running = true;
+
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize(){
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    const density = reduceMotion ? 0.08 : 0.15; // stars per 1k px^2
+    const target = Math.max(80, Math.floor((w*h/1000000)*density*1200));
+    stars = new Array(target).fill(0).map(()=>newStar(true));
+    draw(0); // draw a frame immediately
+  }
+
+  function newStar(initial=false){
+    const r = Math.random()*1.2 + 0.4; // radius
+    const speed = (Math.random()*0.7 + 0.3) * (h/900); // fall speed scales with viewport
+    const tw = Math.random()*0.02 + 0.005; // twinkle speed
+    return {
+      x: Math.random()*w,
+      y: initial ? Math.random()*h : -10,
+      r, speed, tw,
+      baseA: Math.random()*0.7 + 0.2, // base alpha
+      t: Math.random()*Math.PI*2, // phase for twinkle
+    };
+  }
+
+  function step(dt){
+    for (let s of stars){
+      s.y += s.speed * dt;
+      s.t += s.tw * dt;
+      if (s.y - s.r > h) { s.y = -s.r; s.x = Math.random()*w; }
+    }
+  }
+
+  function draw(dt){
+    ctx.clearRect(0,0,w,h);
+    ctx.save();
+    // subtle glow
+    for (let s of stars){
+      const a = s.baseA * (0.6 + 0.4*Math.sin(s.t));
+      ctx.globalAlpha = Math.max(0.1, Math.min(1, a));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  let last = performance.now();
+  function loop(now){
+    if (!running) return;
+    const dt = Math.min(0.05, (now - last)/1000); // clamp dt for stability
+    last = now;
+    step(dt * (reduceMotion ? 0 : 1));
+    draw(dt);
+    if (!reduceMotion) requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  if (!reduceMotion) requestAnimationFrame(loop);
+})();
+</script>
 </body>
 </html>
 

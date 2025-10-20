@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Your Name — Portfolio</title>
-  <meta name="description" content="Personal website and portfolio of Your Name." />
+  <title>Jingxuan Liu — Portfolio</title>
+  <meta name="description" content="Personal website and portfolio of Jingxuan Liu." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
@@ -33,10 +33,9 @@
 <body>
   <div class="wrap">
     <header>
-      <div><strong>Your Name</strong></div>
+      <div><strong>Jingxuan Liu</strong></div>
       <nav>
         <a href="#projects">Projects</a>
-        <a href="#experience">Experience</a>
         <a href="#contact">Contact</a>
       </nav>
     </header>
@@ -44,13 +43,13 @@
     <main>
       <section class="hero">
         <div>
-          <h1>Hi, I’m Your Name 👋</h1>
-          <p>CS @ Your School • Interests: ML, Web, Systems. I build useful things with Java, Python, and JS.</p>
+          <h1>Hi, I’m Jingxuan Liu 👋</h1>
+          <p>CS @ Georgia Tech • Interests: ML, Web, Systems. I build useful things with Java, Python, and C.</p>
           <p>
             <a class="btn" href="resume.pdf">Download Resume</a>
-            &nbsp;&nbsp;<a href="https://github.com/yourhandle">GitHub</a> ·
-            <a href="https://www.linkedin.com/in/yourhandle/">LinkedIn</a> ·
-            <a href="mailto:you@email.com">Email</a>
+            &nbsp;&nbsp;<a href="https://github.com/jingxuanliu1">GitHub</a> ·
+            <a href="https://www.linkedin.com/in/jing-xuan-liu/">LinkedIn</a> ·
+            <a href="mailto:jingxuanliu317@gmail.com">Email</a>
           </p>
         </div>
         <div class="card"><img alt="Preview" src="https://picsum.photos/800/500" /></div>
@@ -60,63 +59,53 @@
         <h2>Projects</h2>
         <div class="grid grid-3">
           <article class="card">
-            <h3>Movie Store</h3>
-            <p class="muted">Django e-commerce app with auth, cart, and Stripe test checkout.</p>
+            <h3>Time Map — Task & Time Manager</h3>
+            <p class="muted">Full‑stack mobile website using Django/Python with user auth and MySQL.</p>
             <div>
-              <span class="tag">Django</span><span class="tag">Postgres</span><span class="tag">Docker</span>
+              <span class="tag">Django</span><span class="tag">Python</span><span class="tag">MySQL</span>
             </div>
-            <p><a href="https://github.com/yourhandle/movie-store">Code</a> · <a href="#">Live demo</a></p>
+            <p><a href="https://github.com/jingxuanliu1">Code</a></p>
           </article>
-          <article class="card">
-            <h3>YouTube Trending ML</h3>
-            <p>Built a model to predict CTR using title & thumbnail features.</p>
-            <div>
-              <span class="tag">PyTorch</span><span class="tag">scikit-learn</span><span class="tag">Pandas</span>
-            </div>
-            <p><a href="https://github.com/yourhandle/yt-trending-ml">Code</a></p>
-          </article>
-          <article class="card">
-            <h3>Time Map</h3>
-            <p>Full-stack time management app with calendar sync and reminders.</p>
-            <div>
-              <span class="tag">React</span><span class="tag">FastAPI</span><span class="tag">Redis</span>
-            </div>
-            <p><a href="https://github.com/yourhandle/time-map">Code</a> · <a href="#">Live demo</a></p>
-          </article>
-        </div>
-      </section>
 
-      <section id="experience">
-        <h2>Experience</h2>
-        <div class="grid grid-2">
-          <div class="card">
-            <h3>Software Intern — Company</h3>
-            <p><em>Jun–Aug 2025 · Remote</em></p>
-            <ul>
-              <li>Built X that improved Y by Z%.</li>
-              <li>Shipped feature A to N users.</li>
-            </ul>
-          </div>
-          <div class="card">
-            <h3>Teaching Assistant — Course</h3>
-            <p><em>Spring 2025</em></p>
-            <ul>
-              <li>Led weekly labs and authored auto-grading tests.</li>
-            </ul>
-          </div>
+          <article class="card">
+            <h3>Movie Store — Purchasing App</h3>
+            <p>Cross‑platform movie purchasing app with secure auth and payment processing.</p>
+            <div>
+              <span class="tag">Django</span><span class="tag">Python</span><span class="tag">MySQL</span>
+            </div>
+            <p><a href="https://github.com/jingxuanliu1">Code</a></p>
+          </article>
+
+          <article class="card">
+            <h3>Interactive 2D Game</h3>
+            <p>Built core mechanics and gameplay; tested for cross‑platform compatibility.</p>
+            <div>
+              <span class="tag">C</span><span class="tag">Unity</span>
+            </div>
+            <p><a href="https://github.com/jingxuanliu1">Code</a></p>
+          </article>
+
+          <article class="card">
+            <h3>Autonomous Robotic System</h3>
+            <p>Programmed control algorithms and validated performance across conditions.</p>
+            <div>
+              <span class="tag">Python</span><span class="tag">Robotics</span>
+            </div>
+            <p><a href="https://github.com/jingxuanliu1">Code</a></p>
+          </article>
         </div>
       </section>
 
       <section id="contact">
         <h2>Contact</h2>
         <div class="card">
-          <p>Best way to reach me is <a href="mailto:you@email.com">email</a>. I’m open to SWE/ML internships.</p>
+          <p>Best way to reach me is <a href="mailto:jingxuanliu317@gmail.com">email</a>. I’m open to SWE/ML internships.</p>
         </div>
       </section>
     </main>
 
     <footer>
-      © <span id="year"></span> Your Name · Built with HTML/CSS · Hosted on GitHub Pages
+      © <span id="year"></span> Jingxuan Liu · Built with HTML/CSS · Hosted on GitHub Pages
     </footer>
   </div>
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>

@@ -160,14 +160,28 @@
 // Footer year
 document.getElementById('year').textContent = new Date().getFullYear();
 
-// Animated starfield (falls from the sky) — with HiDPI scaling & reduced‑motion friendly
+// Animated starfield with CONSTELLATION links near the mouse — HiDPI & reduced‑motion friendly
 (function(){
   const canvas = document.getElementById('stars');
   const ctx = canvas.getContext('2d');
   let cssW, cssH, dpr, stars = [];
 
+  // Mouse tracking for constellation effect
+  const mouse = { x: null, y: null, active: false };
+  window.addEventListener('pointermove', (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+    mouse.active = true;
+  });
+  window.addEventListener('pointerleave', ()=>{ mouse.active = false; });
+
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const SPEED_SCALE = reduceMotion ? 0.25 : 1.0; // animate slower if user prefers reduced motion
+
+  // Constellation parameters
+  const MAX_DIST = 130;     // max distance to draw a line (CSS px)
+  const MOUSE_RADIUS = 180; // lines appear when stars are near the cursor
 
   function resize(){
     dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
@@ -208,27 +222,83 @@ document.getElementById('year').textContent = new Date().getFullYear();
     }
   }
 
+  // Build a simple spatial hash so we don't do O(N^2) line checks
+  function buildGrid(cell){
+    const grid = new Map();
+    for (let i=0;i<stars.length;i++){
+      const s = stars[i];
+      const gx = Math.floor(s.x / cell);
+      const gy = Math.floor(s.y / cell);
+      const key = gx+','+gy;
+      if (!grid.has(key)) grid.set(key, []);
+      grid.get(key).push(i);
+    }
+    return grid;
+  }
+
   function draw(){
     ctx.clearRect(0,0,cssW,cssH);
+
+    // 1) Draw stars (with tiny streaks)
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (let s of stars){
       const a = s.baseA * (0.6 + 0.4*Math.sin(s.t));
       ctx.globalAlpha = Math.max(0.15, Math.min(1, a));
-      // draw a small streak to suggest falling
       ctx.beginPath();
       ctx.moveTo(s.x, s.y - s.r*2);
       ctx.lineTo(s.x, s.y + s.r*0.5);
       ctx.lineWidth = Math.max(1, s.r*0.6);
       ctx.strokeStyle = '#fff';
       ctx.stroke();
-      // star core
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
     }
     ctx.restore();
+
+    // 2) Draw constellation lines near mouse
+    if (mouse.active){
+      const cell = MAX_DIST;
+      const grid = buildGrid(cell);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i=0;i<stars.length;i++){
+        const s = stars[i];
+        const dm1 = Math.hypot(mouse.x - s.x, mouse.y - s.y);
+        if (dm1 > MOUSE_RADIUS) continue; // only consider stars near cursor
+
+        const gx = Math.floor(s.x / cell), gy = Math.floor(s.y / cell);
+        for (let oy=-1; oy<=1; oy++){
+          for (let ox=-1; ox<=1; ox++){
+            const key = (gx+ox)+','+(gy+oy);
+            const bucket = grid.get(key);
+            if (!bucket) continue;
+            for (const j of bucket){
+              if (j <= i) continue; // avoid dupes
+              const t = stars[j];
+              const dm2 = Math.hypot(mouse.x - t.x, mouse.y - t.y);
+              const dx = t.x - s.x, dy = t.y - s.y;
+              const d = Math.hypot(dx, dy);
+              if (d < MAX_DIST && (dm2 < MOUSE_RADIUS)){
+                const nearMouse = 1 - Math.min(Math.min(dm1, dm2) / MOUSE_RADIUS, 1);
+                const nearEachOther = 1 - (d / MAX_DIST);
+                const alpha = Math.max(0, Math.min(1, 0.9 * nearMouse * nearEachOther));
+                ctx.globalAlpha = alpha;
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#cfe6ff';
+                ctx.beginPath();
+                ctx.moveTo(s.x, s.y);
+                ctx.lineTo(t.x, t.y);
+                ctx.stroke();
+              }
+            }
+          }
+        }
+      }
+      ctx.restore();
+    }
   }
 
   let last = performance.now();
@@ -237,7 +307,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
     last = now;
     step(dt);
     draw();
-    requestAnimationFrame(loop); // always animate; we already slow it via SPEED_SCALE
+    requestAnimationFrame(loop); // always animate; slowed via SPEED_SCALE
   }
 
   window.addEventListener('resize', resize, { passive:true });
@@ -276,5 +346,4 @@ ${msg}
 </script>
 </body>
 </html>
-
 

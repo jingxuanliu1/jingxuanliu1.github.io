@@ -337,7 +337,7 @@ fetch('/resume.pdf', { method:'HEAD' }).then(r=>{ if(!r.ok){ console.warn('resum
 
 // Chat widget logic: submit via Form endpoint if configured, else mailto fallback
 (function(){
-  const FORM_ENDPOINT = ""; // e.g., "https://formspree.io/f/abcdwxyz" (set this to enable direct send)
+  const FORM_ENDPOINT = "https://formspree.io/f/abcdwxyz"; // e.g., "https://formspree.io/f/abcdwxyz" (set this to enable direct send)
   const DEST_EMAIL = "jingxuanliu317@gmail.com"; // mailto fallback target
 
   const toggle = document.getElementById('chat-toggle');

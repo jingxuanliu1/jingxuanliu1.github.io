@@ -46,6 +46,66 @@
     .chat-actions .hint{color:var(--muted);} 
     /* Toast */
     .toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#0b0d10; border:1px solid #1b2230; color:var(--text); padding:10px 14px; border-radius:12px; box-shadow:0 10px 24px rgba(0,0,0,.35); z-index:4;}
+
+    /* ====== Scene (light-on + walking silhouette) ====== */
+    .scene{ position:relative; overflow:hidden; }
+    .scene img{ display:block; width:100%; border-radius:12px; filter:brightness(.65) contrast(1.02); transition:filter 900ms ease; }
+
+    /* “Light turns on” overlay */
+    .scene .light{
+      position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity 900ms ease;
+      background:
+        radial-gradient(120% 120% at 60% 35%,
+          rgba(255,255,220,.35) 0%,
+          rgba(255,255,220,.15) 35%,
+          rgba(0,0,0,.05) 60%,
+          rgba(0,0,0,.25) 100%);
+      mix-blend-mode:screen;
+      border-radius:12px;
+    }
+
+    /* Walking silhouette */
+    .walker{
+      position:absolute; bottom:6%; left:-28%;
+      width:20%; opacity:0;
+      filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));
+      transform:translateX(0) translateY(0) scaleX(1);
+    }
+    .walker circle,.walker path{ fill:#0b0d10; }
+    @media (prefers-color-scheme: dark){
+      .walker circle,.walker path{ fill:#e6eef8; opacity:.9; }
+    }
+
+    /* Activated state */
+    .scene-on img{ filter:brightness(1.05) contrast(1.05); }
+    .scene-on .light{ opacity:1; }
+    .scene-on .walker{
+      opacity:1;
+      animation:
+        walker-x 5.2s ease-in-out forwards,
+        walker-bob 750ms ease-in-out infinite;
+    }
+
+    /* Horizontal travel */
+    @keyframes walker-x{
+      0%   { transform:translateX(0) translateY(0) scaleX(1); }
+      50%  { transform:translateX(80vw) translateY(0) scaleX(1); }
+      55%  { transform:translateX(80vw) translateY(0) scaleX(-1); }
+      100% { transform:translateX(15vw) translateY(0) scaleX(-1); }
+    }
+
+    /* Subtle bob */
+    @keyframes walker-bob{
+      0%,100% { transform:translateX(var(--walker-x,0)) translateY(0) scaleX(var(--walker-flip,1)); }
+      50%     { transform:translateX(var(--walker-x,0)) translateY(-2px) scaleX(var(--walker-flip,1)); }
+    }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .scene-on .walker{ animation:none; }
+      .scene img{ transition:none; }
+      .scene .light{ transition:none; }
+    }
   </style>
 </head>
 <body>
@@ -73,7 +133,19 @@
             <a href="mailto:jingxuanliu317@gmail.com">Email</a>
           </p>
         </div>
-        <div class="card"><img alt="Preview" src="https://picsum.photos/800/500" /></div>
+
+        <!-- Hero preview with "light on" + walking silhouette -->
+        <div class="card scene" id="hero-scene" aria-label="Preview scene with light turning on and a passerby silhouette">
+          <img alt="Preview" src="https://picsum.photos/800/500" />
+          <div class="light" aria-hidden="true"></div>
+
+          <!-- Inline SVG silhouette -->
+          <svg class="walker" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="33" cy="14" r="6" />
+            <path d="M31 20 l-3 12 7 8 5 12 6-2 -4-13 4-7 3-7 -4-5 -6 3z" />
+            <path d="M23 38 l8 4 4 10 -6 2 -9-10z" />
+          </svg>
+        </div>
       </section>
 
       <section id="projects">
@@ -214,25 +286,24 @@ document.getElementById('year').textContent = new Date().getFullYear();
 
   // Colors
   const GLOW_COLOR = '#7aa2ff';
-  const STAR_CORE  = '#ffffff';
 
   // Constellation parameters
   const MAX_DIST = 130;     // max distance to draw a line (CSS px)
   const MOUSE_RADIUS = 180; // lines appear when stars are near the cursor
 
-  // Pre-rendered glow sprite (offscreen canvas) to avoid heavy shadowBlur per star
+  // Pre-rendered glow sprite
   let glowSprite = null;
   function makeGlowSprite(){
-    const size = 64; // texture size
+    const size = 64;
     const c = document.createElement('canvas');
     c.width = c.height = size;
     const g = c.getContext('2d');
 
     const grad = g.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
-    grad.addColorStop(0.0, 'rgba(255,255,255,0.95)'); // bright core
+    grad.addColorStop(0.0, 'rgba(255,255,255,0.95)');
     grad.addColorStop(0.25, 'rgba(255,255,255,0.60)');
-    grad.addColorStop(0.55, 'rgba(122,162,255,0.35)'); // glow tint
-    grad.addColorStop(1.0, 'rgba(122,162,255,0.00)');  // fade out
+    grad.addColorStop(0.55, 'rgba(122,162,255,0.35)');
+    grad.addColorStop(1.0, 'rgba(122,162,255,0.00)');
     g.fillStyle = grad;
     g.fillRect(0,0,size,size);
     return c;
@@ -247,7 +318,6 @@ document.getElementById('year').textContent = new Date().getFullYear();
     canvas.style.height = cssH + 'px';
     ctx.setTransform(dpr,0,0,dpr,0,0);
 
-    // density scaled by screen size
     const small = cssW * cssH < 800 * 800;
     const density = reduceMotion ? Math.min(0.10, STAR_DENSITY) : (small ? Math.max(0.10, STAR_DENSITY * 0.8) : STAR_DENSITY);
     const target = Math.max(90, Math.floor((cssW * cssH / 1000000) * density * 1100));
@@ -257,10 +327,10 @@ document.getElementById('year').textContent = new Date().getFullYear();
   }
 
   function newStar(initial=false){
-    const r = Math.random()*1.6 + 0.6; // star "radius" scale
-    const speed = (Math.random()*0.9 + 0.35) * (cssH/900) * SPEED_SCALE; // vertical speed
-    const drift = (Math.random()*0.3 - 0.15) * SPEED_SCALE; // slight horizontal drift
-    const tw = Math.random()*0.9 + 0.3; // twinkle frequency multiplier
+    const r = Math.random()*1.6 + 0.6;
+    const speed = (Math.random()*0.9 + 0.35) * (cssH/900) * SPEED_SCALE;
+    const drift = (Math.random()*0.3 - 0.15) * SPEED_SCALE;
+    const tw = Math.random()*0.9 + 0.3;
     return {
       x: Math.random()*cssW,
       y: initial ? Math.random()*cssH : -10,
@@ -273,7 +343,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
 
   function step(dt){
     for (let s of stars){
-      s.y += s.speed * dt * 60; // normalize to ~60fps
+      s.y += s.speed * dt * 60;
       s.x += s.drift * dt * 60;
       s.t += (s.tw * dt);
       if (s.y - s.r > cssH) { s.y = -s.r; s.x = Math.random()*cssW; }
@@ -300,18 +370,15 @@ document.getElementById('year').textContent = new Date().getFullYear();
   function draw(){
     ctx.clearRect(0,0,cssW,cssH);
 
-    // 1) Draw stars using pre-rendered glow sprite (fast)
+    // 1) Draw stars
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (let s of stars){
       const twinkle = 0.6 + 0.4 * Math.sin(s.t);
       const a = Math.max(0.12, Math.min(1, s.baseA * twinkle));
-
-      // scale sprite relative to star size
-      const haloScale = 2.6;            // larger = softer bloom
-      const w = s.r * haloScale * 8;    // sprite size in CSS px
+      const haloScale = 2.6;
+      const w = s.r * haloScale * 8;
       const h = w;
-
       ctx.globalAlpha = a;
       ctx.drawImage(glowSprite, s.x - w/2, s.y - h/2, w, h);
     }
@@ -319,9 +386,9 @@ document.getElementById('year').textContent = new Date().getFullYear();
 
     // 2) Constellation lines near mouse (throttled)
     if (mouse.active){
-      const cell = MAX_DIST;
+      const cell = 130;
 
-      if (frameCount % GRID_REBUILD_EVERY_N === 0 || !cachedGrid){
+      if (frameCount % 2 === 0 || !cachedGrid){
         cachedGrid = buildGrid(cell);
       }
       const grid = cachedGrid;
@@ -334,7 +401,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
       outer: for (let i=0;i<stars.length;i++){
         const s = stars[i];
         const dm1 = Math.hypot(mouse.x - s.x, mouse.y - s.y);
-        if (dm1 > MOUSE_RADIUS) continue;
+        if (dm1 > 180) continue;
 
         const gx = Math.floor(s.x / cell), gy = Math.floor(s.y / cell);
         for (let oy=-1; oy<=1; oy++){
@@ -348,16 +415,16 @@ document.getElementById('year').textContent = new Date().getFullYear();
               const dm2 = Math.hypot(mouse.x - t.x, mouse.y - t.y);
               const dx = t.x - s.x, dy = t.y - s.y;
               const d = Math.hypot(dx, dy);
-              if (d < MAX_DIST && dm2 < MOUSE_RADIUS){
-                const nearMouse = 1 - Math.min(Math.min(dm1, dm2) / MOUSE_RADIUS, 1);
-                const nearEachOther = 1 - (d / MAX_DIST);
+              if (d < 130 && dm2 < 180){
+                const nearMouse = 1 - Math.min(Math.min(dm1, dm2) / 180, 1);
+                const nearEachOther = 1 - (d / 130);
                 const alpha = Math.max(0, Math.min(1, 0.9 * nearMouse * nearEachOther));
 
-                if (++linesDrawn > MAX_LINES_PER_FRAME) { break outer; }
+                if (++linesDrawn > 700) { break outer; }
 
                 ctx.globalAlpha = alpha * 0.9;
                 ctx.lineWidth = 1.0 + 0.6 * (nearMouse * nearEachOther);
-                ctx.strokeStyle = GLOW_COLOR;
+                ctx.strokeStyle = '#7aa2ff';
                 ctx.beginPath();
                 ctx.moveTo(s.x, s.y);
                 ctx.lineTo(t.x, t.y);
@@ -386,6 +453,16 @@ document.getElementById('year').textContent = new Date().getFullYear();
   window.addEventListener('resize', applyTunablesAndResize, { passive:true });
   applyTunablesAndResize();
   requestAnimationFrame(loop);
+})();
+
+/* Turn on the scene light after ~3s, then let the walker animate */
+(function(){
+  const scene = document.getElementById('hero-scene');
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!scene) return;
+  setTimeout(()=>{ 
+    scene.classList.add('scene-on');
+  }, reduceMotion ? 0 : 3000);
 })();
 
 /* Chat widget logic: submit via Form endpoint if configured, else mailto fallback */
@@ -467,7 +544,6 @@ document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
-
 
 
 

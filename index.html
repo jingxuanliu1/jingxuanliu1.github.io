@@ -173,6 +173,10 @@ document.getElementById('year').textContent = new Date().getFullYear();
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const SPEED_SCALE = reduceMotion ? 0.25 : 1.0; // animate slower if user prefers reduced motion
 
+  // >>> Glow settings (NEW)
+  const GLOW_COLOR = '#7aa2ff';   // matches your --accent
+  const STAR_CORE  = '#ffffff';    // inner core color
+
   // Constellation parameters
   const MAX_DIST = 130;     // max distance to draw a line (CSS px)
   const MOUSE_RADIUS = 180; // lines appear when stars are near the cursor
@@ -233,31 +237,57 @@ document.getElementById('year').textContent = new Date().getFullYear();
   function draw(){
     ctx.clearRect(0,0,cssW,cssH);
 
-    // 1) Draw stars (with tiny streaks)
+    // 1) Draw stars with soft glow + tiny streaks (REPLACED BLOCK)
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (let s of stars){
-      const a = s.baseA * (0.6 + 0.4*Math.sin(s.t));
-      ctx.globalAlpha = Math.max(0.15, Math.min(1, a));
+      // twinkle alpha (used for glow intensity too)
+      const twinkle = 0.6 + 0.4 * Math.sin(s.t);
+      const a = Math.max(0.15, Math.min(1, s.baseA * twinkle));
+
+      // soft halo (outer glow)
+      const haloR = s.r * 3.2;
+      ctx.globalAlpha = a * 0.35;
+      ctx.shadowBlur = haloR * 2.0;
+      ctx.shadowColor = GLOW_COLOR;
       ctx.beginPath();
-      ctx.moveTo(s.x, s.y - s.r*2);
-      ctx.lineTo(s.x, s.y + s.r*0.5);
-      ctx.lineWidth = Math.max(1, s.r*0.6);
-      ctx.strokeStyle = '#fff';
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-      ctx.fillStyle = '#ffffff';
+      ctx.arc(s.x, s.y, haloR, 0, Math.PI * 2);
+      ctx.fillStyle = GLOW_COLOR;
       ctx.fill();
+
+      // bright core
+      ctx.globalAlpha = Math.max(0.35, a);
+      ctx.shadowBlur = s.r * 6.0;
+      ctx.shadowColor = STAR_CORE;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = STAR_CORE;
+      ctx.fill();
+
+      // subtle vertical streak
+      ctx.shadowBlur = s.r * 4.0;
+      ctx.shadowColor = GLOW_COLOR;
+      ctx.lineWidth = Math.max(1, s.r * 0.6);
+      ctx.globalAlpha = a * 0.55;
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y - s.r * 2);
+      ctx.lineTo(s.x, s.y + s.r * 0.5);
+      ctx.strokeStyle = GLOW_COLOR;
+      ctx.stroke();
     }
     ctx.restore();
 
-    // 2) Draw constellation lines near mouse
+    // 2) Draw constellation lines near mouse (with glow)
     if (mouse.active){
       const cell = MAX_DIST;
       const grid = buildGrid(cell);
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
+
+      // glow for lines
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = GLOW_COLOR;
+
       for (let i=0;i<stars.length;i++){
         const s = stars[i];
         const dm1 = Math.hypot(mouse.x - s.x, mouse.y - s.y);
@@ -279,9 +309,10 @@ document.getElementById('year').textContent = new Date().getFullYear();
                 const nearMouse = 1 - Math.min(Math.min(dm1, dm2) / MOUSE_RADIUS, 1);
                 const nearEachOther = 1 - (d / MAX_DIST);
                 const alpha = Math.max(0, Math.min(1, 0.9 * nearMouse * nearEachOther));
-                ctx.globalAlpha = alpha;
-                ctx.lineWidth = 1;
-                ctx.strokeStyle = '#cfe6ff';
+
+                ctx.globalAlpha = alpha * 0.9;
+                ctx.lineWidth = 1.25 + 0.85 * (nearMouse * nearEachOther);
+                ctx.strokeStyle = GLOW_COLOR;
                 ctx.beginPath();
                 ctx.moveTo(s.x, s.y);
                 ctx.lineTo(t.x, t.y);
@@ -388,6 +419,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
+
 
 
 

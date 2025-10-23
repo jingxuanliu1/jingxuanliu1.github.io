@@ -151,10 +151,10 @@
   </div>
 
   <script>
-// Footer year
+/* Footer year */
 document.getElementById('year').textContent = new Date().getFullYear();
 
-// Animated starfield with CONSTELLATION links near the mouse — HiDPI & reduced-motion friendly
+/* Sprite-glow starfield with adaptive quality (fast + pretty) */
 (function(){
   const canvas = document.getElementById('stars');
   const ctx = canvas.getContext('2d');
@@ -167,36 +167,97 @@ document.getElementById('year').textContent = new Date().getFullYear();
     mouse.x = e.clientX - rect.left;
     mouse.y = e.clientY - rect.top;
     mouse.active = true;
-  });
-  window.addEventListener('pointerleave', ()=>{ mouse.active = false; });
+  }, { passive:true });
+  window.addEventListener('pointerleave', ()=>{ mouse.active = false; }, { passive:true });
 
+  // Respect reduced motion
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const SPEED_SCALE = reduceMotion ? 0.25 : 1.0; // animate slower if user prefers reduced motion
 
-  // >>> Glow settings (NEW)
-  const GLOW_COLOR = '#7aa2ff';   // matches your --accent
-  const STAR_CORE  = '#ffffff';    // inner core color
+  // ---- Adaptive quality (auto-tunes DPR, density, line limits) ----
+  let quality = reduceMotion ? 1 : 3; // 3=high, 2=med, 1=low
+
+  function currentTunables(){
+    if (quality === 3) return { MAX_DPR:1.5, DENSITY:0.18, LINES:700, GRID_N:2 };
+    if (quality === 2) return { MAX_DPR:1.35, DENSITY:0.14, LINES:450, GRID_N:3 };
+    return               { MAX_DPR:1.2, DENSITY:0.10, LINES:300, GRID_N:4 };
+  }
+
+  let fpsSamples = [];
+  let lastFPSDropAt = 0;
+  function trackFPS(dt){
+    const fps = 1 / Math.max(0.0001, dt);
+    fpsSamples.push(fps);
+    if (fpsSamples.length > 30) fpsSamples.shift(); // ~0.5s window @60fps
+    const avg = fpsSamples.reduce((a,b)=>a+b,0) / fpsSamples.length;
+    const now = performance.now();
+    if (avg < 48 && quality > 1 && now - lastFPSDropAt > 2000){
+      quality--;
+      lastFPSDropAt = now;
+      applyTunablesAndResize();
+    }
+  }
+
+  // Tunables (updated by quality)
+  let MAX_DPR = 1.5, STAR_DENSITY = 0.18, MAX_LINES_PER_FRAME = 700, GRID_REBUILD_EVERY_N = 2;
+
+  function applyTunablesAndResize(){
+    const t = currentTunables();
+    MAX_DPR = t.MAX_DPR;
+    STAR_DENSITY = t.DENSITY;
+    MAX_LINES_PER_FRAME = t.LINES;
+    GRID_REBUILD_EVERY_N = t.GRID_N;
+    resize();
+  }
+
+  // Animation speed (slower if reduced motion)
+  const SPEED_SCALE = reduceMotion ? 0.25 : 1.0;
+
+  // Colors
+  const GLOW_COLOR = '#7aa2ff';
+  const STAR_CORE  = '#ffffff';
 
   // Constellation parameters
   const MAX_DIST = 130;     // max distance to draw a line (CSS px)
   const MOUSE_RADIUS = 180; // lines appear when stars are near the cursor
 
+  // Pre-rendered glow sprite (offscreen canvas) to avoid heavy shadowBlur per star
+  let glowSprite = null;
+  function makeGlowSprite(){
+    const size = 64; // texture size
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const g = c.getContext('2d');
+
+    const grad = g.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+    grad.addColorStop(0.0, 'rgba(255,255,255,0.95)'); // bright core
+    grad.addColorStop(0.25, 'rgba(255,255,255,0.60)');
+    grad.addColorStop(0.55, 'rgba(122,162,255,0.35)'); // glow tint
+    grad.addColorStop(1.0, 'rgba(122,162,255,0.00)');  // fade out
+    g.fillStyle = grad;
+    g.fillRect(0,0,size,size);
+    return c;
+  }
+
   function resize(){
-    dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    dpr = Math.max(1, Math.min(MAX_DPR, window.devicePixelRatio || 1));
     cssW = window.innerWidth; cssH = window.innerHeight;
     canvas.width = Math.floor(cssW * dpr);
     canvas.height = Math.floor(cssH * dpr);
     canvas.style.width = cssW + 'px';
     canvas.style.height = cssH + 'px';
-    ctx.setTransform(dpr,0,0,dpr,0,0); // draw in CSS pixels
+    ctx.setTransform(dpr,0,0,dpr,0,0);
 
-    const density = reduceMotion ? 0.12 : 0.22; // more visible
-    const target = Math.max(120, Math.floor((cssW*cssH/1000000)*density*1200));
+    // density scaled by screen size
+    const small = cssW * cssH < 800 * 800;
+    const density = reduceMotion ? Math.min(0.10, STAR_DENSITY) : (small ? Math.max(0.10, STAR_DENSITY * 0.8) : STAR_DENSITY);
+    const target = Math.max(90, Math.floor((cssW * cssH / 1000000) * density * 1100));
     stars = new Array(target).fill(0).map(()=>newStar(true));
+
+    if (!glowSprite) glowSprite = makeGlowSprite();
   }
 
   function newStar(initial=false){
-    const r = Math.random()*1.6 + 0.6; // larger
+    const r = Math.random()*1.6 + 0.6; // star "radius" scale
     const speed = (Math.random()*0.9 + 0.35) * (cssH/900) * SPEED_SCALE; // vertical speed
     const drift = (Math.random()*0.3 - 0.15) * SPEED_SCALE; // slight horizontal drift
     const tw = Math.random()*0.9 + 0.3; // twinkle frequency multiplier
@@ -220,7 +281,9 @@ document.getElementById('year').textContent = new Date().getFullYear();
     }
   }
 
-  // Build a simple spatial hash so we don't do O(N^2) line checks
+  // Spatial grid cache for constellation lines
+  let cachedGrid = null;
+  let frameCount = 0;
   function buildGrid(cell){
     const grid = new Map();
     for (let i=0;i<stars.length;i++){
@@ -237,61 +300,41 @@ document.getElementById('year').textContent = new Date().getFullYear();
   function draw(){
     ctx.clearRect(0,0,cssW,cssH);
 
-    // 1) Draw stars with soft glow + tiny streaks (REPLACED BLOCK)
+    // 1) Draw stars using pre-rendered glow sprite (fast)
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (let s of stars){
-      // twinkle alpha (used for glow intensity too)
       const twinkle = 0.6 + 0.4 * Math.sin(s.t);
-      const a = Math.max(0.15, Math.min(1, s.baseA * twinkle));
+      const a = Math.max(0.12, Math.min(1, s.baseA * twinkle));
 
-      // soft halo (outer glow)
-      const haloR = s.r * 3.2;
-      ctx.globalAlpha = a * 0.35;
-      ctx.shadowBlur = haloR * 2.0;
-      ctx.shadowColor = GLOW_COLOR;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, haloR, 0, Math.PI * 2);
-      ctx.fillStyle = GLOW_COLOR;
-      ctx.fill();
+      // scale sprite relative to star size
+      const haloScale = 2.6;            // larger = softer bloom
+      const w = s.r * haloScale * 8;    // sprite size in CSS px
+      const h = w;
 
-      // bright core
-      ctx.globalAlpha = Math.max(0.35, a);
-      ctx.shadowBlur = s.r * 6.0;
-      ctx.shadowColor = STAR_CORE;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = STAR_CORE;
-      ctx.fill();
-
-      // subtle vertical streak
-      ctx.shadowBlur = s.r * 4.0;
-      ctx.shadowColor = GLOW_COLOR;
-      ctx.lineWidth = Math.max(1, s.r * 0.6);
-      ctx.globalAlpha = a * 0.55;
-      ctx.beginPath();
-      ctx.moveTo(s.x, s.y - s.r * 2);
-      ctx.lineTo(s.x, s.y + s.r * 0.5);
-      ctx.strokeStyle = GLOW_COLOR;
-      ctx.stroke();
+      ctx.globalAlpha = a;
+      ctx.drawImage(glowSprite, s.x - w/2, s.y - h/2, w, h);
     }
     ctx.restore();
 
-    // 2) Draw constellation lines near mouse (with glow)
+    // 2) Constellation lines near mouse (throttled)
     if (mouse.active){
       const cell = MAX_DIST;
-      const grid = buildGrid(cell);
+
+      if (frameCount % GRID_REBUILD_EVERY_N === 0 || !cachedGrid){
+        cachedGrid = buildGrid(cell);
+      }
+      const grid = cachedGrid;
+
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
 
-      // glow for lines
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = GLOW_COLOR;
+      let linesDrawn = 0;
 
-      for (let i=0;i<stars.length;i++){
+      outer: for (let i=0;i<stars.length;i++){
         const s = stars[i];
         const dm1 = Math.hypot(mouse.x - s.x, mouse.y - s.y);
-        if (dm1 > MOUSE_RADIUS) continue; // only consider stars near cursor
+        if (dm1 > MOUSE_RADIUS) continue;
 
         const gx = Math.floor(s.x / cell), gy = Math.floor(s.y / cell);
         for (let oy=-1; oy<=1; oy++){
@@ -300,18 +343,20 @@ document.getElementById('year').textContent = new Date().getFullYear();
             const bucket = grid.get(key);
             if (!bucket) continue;
             for (const j of bucket){
-              if (j <= i) continue; // avoid dupes
+              if (j <= i) continue;
               const t = stars[j];
               const dm2 = Math.hypot(mouse.x - t.x, mouse.y - t.y);
               const dx = t.x - s.x, dy = t.y - s.y;
               const d = Math.hypot(dx, dy);
-              if (d < MAX_DIST && (dm2 < MOUSE_RADIUS)){
+              if (d < MAX_DIST && dm2 < MOUSE_RADIUS){
                 const nearMouse = 1 - Math.min(Math.min(dm1, dm2) / MOUSE_RADIUS, 1);
                 const nearEachOther = 1 - (d / MAX_DIST);
                 const alpha = Math.max(0, Math.min(1, 0.9 * nearMouse * nearEachOther));
 
+                if (++linesDrawn > MAX_LINES_PER_FRAME) { break outer; }
+
                 ctx.globalAlpha = alpha * 0.9;
-                ctx.lineWidth = 1.25 + 0.85 * (nearMouse * nearEachOther);
+                ctx.lineWidth = 1.0 + 0.6 * (nearMouse * nearEachOther);
                 ctx.strokeStyle = GLOW_COLOR;
                 ctx.beginPath();
                 ctx.moveTo(s.x, s.y);
@@ -326,21 +371,24 @@ document.getElementById('year').textContent = new Date().getFullYear();
     }
   }
 
+  // Main loop
   let last = performance.now();
   function loop(now){
     const dt = Math.min(0.05, (now - last)/1000);
     last = now;
+    frameCount++;
+    trackFPS(dt);
     step(dt);
     draw();
-    requestAnimationFrame(loop); // always animate
+    requestAnimationFrame(loop);
   }
 
-  window.addEventListener('resize', resize, { passive:true });
-  resize();
+  window.addEventListener('resize', applyTunablesAndResize, { passive:true });
+  applyTunablesAndResize();
   requestAnimationFrame(loop);
 })();
 
-// Chat widget logic: submit via Form endpoint if configured, else mailto fallback
+/* Chat widget logic: submit via Form endpoint if configured, else mailto fallback */
 (function(){
   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   // Set this to your Formspree/Getform endpoint to send directly to your email.

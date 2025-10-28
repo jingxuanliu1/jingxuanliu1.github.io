@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ML Visualizations — K-Means, GMM, DBSCAN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b0d10;--card:#12161b;--muted:#9fb2c8;--text:#e6eef8;--accent:#7aa2ff;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(120deg,#0b0d10,#0f1320 60%);color:var(--text)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:20px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;position:sticky;top:0;background:rgba(11,13,16,.75);backdrop-filter:blur(8px);border-bottom:1px solid #1b2230;z-index:2}
+  .brand{font-weight:800}
+  .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:var(--accent);color:#0b0d10;font-weight:700;border:none;cursor:pointer}
+  .btn.ghost{background:#182035;color:#c7d6f3;border:1px solid #273352}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .card{background:var(--card);border:1px solid #1b2230;border-radius:16px;padding:14px;box-shadow:0 10px 28px rgba(0,0,0,.25);margin-top:16px}
+  label{font-size:14px;color:var(--muted)}
+  select,input[type="number"],input[type="checkbox"]{background:#0f1320;border:1px solid #1f2538;color:var(--text);padding:8px 10px;border-radius:10px}
+  input[type="number"]{width:90px}
+  .grid{display:grid;grid-template-columns:1fr 320px;gap:16px}
+  @media (max-width:1000px){.grid{grid-template-columns:1fr}}
+  canvas{display:block;width:100%;height:auto;background:#0c1120;border:1px solid #1b2230;border-radius:14px}
+  .muted{color:var(--muted)}
+  .pill{background:#0f1423;border:1px solid #20273c;border-radius:999px;padding:6px 10px;font-size:13px}
+  .legend{display:flex;gap:8px;flex-wrap:wrap}
+  .swatch{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:12px;height:12px;border-radius:50%}
+  details summary{cursor:pointer;font-weight:600}
+  footer{color:var(--muted);padding:28px 0 60px;text-align:center;border-top:1px solid #1b2230;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">ML Visualizations</div>
+    <nav class="row">
+      <a class="btn" href="/" aria-label="Back to home">← Back to Home</a>
+    </nav>
+  </header>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div class="row">
+        <label>Algorithm</label>
+        <select id="algo">
+          <option value="kmeans">K-Means (hard)</option>
+          <option value="gmm">GMM (EM)</option>
+          <option value="dbscan">DBSCAN (density)</option>
+        </select>
+
+        <span id="kWrap" class="row">
+          <label>K</label>
+          <input id="k" type="number" min="1" max="8" value="3" />
+        </span>
+
+        <span id="dbWrap" class="row" style="display:none">
+          <label>ε</label>
+          <input id="eps" type="number" step="0.1" value="0.9" />
+          <label>minPts</label>
+          <input id="minPts" type="number" min="1" value="5" />
+        </span>
+
+        <span id="softWrap" class="row">
+          <label title="GMM only">Soft view</label>
+          <input id="softView" type="checkbox" checked />
+        </span>
+
+        <span class="row">
+          <label>Decision regions</label>
+          <input id="regions" type="checkbox" />
+        </span>
+
+        <span class="pill" id="status">Ready</span>
+      </div>
+
+      <div class="row">
+        <button class="btn ghost" id="randomPts">Add random points</button>
+        <button class="btn ghost" id="clearPts">Clear points</button>
+        <button class="btn" id="initBtn">Init</button>
+        <button class="btn" id="stepBtn">Step</button>
+        <button class="btn" id="run10Btn">Run ×10</button>
+        <button class="btn ghost" id="resetBtn">Reset</button>
+      </div>
+    </div>
+    <p class="muted" style="margin:8px 0 0">
+      Tip: Click on the canvas to add custom data points. “Decision regions” overlays a coarse background classification map (for K-Means & GMM). In DBSCAN, set <b>ε</b> and <b>minPts</b>, then click <b>Step</b> to run.
+    </p>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <canvas id="plot" width="900" height="560" aria-label="2D clustering canvas"></canvas>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:6px 0 6px">Legend & Metrics</h3>
+      <div id="legend" class="legend"></div>
+      <div style="margin-top:10px">
+        <div class="pill" id="metric1">—</div>
+        <div class="pill" id="metric2">—</div>
+      </div>
+
+      <details style="margin-top:14px">
+        <summary>What you’re seeing</summary>
+        <ul>
+          <li><b>K-Means</b>: Hard clustering via assign (nearest centroid) → update (centroid means). Objective: minimize SSE.</li>
+          <li><b>GMM</b>: EM with soft responsibilities; ellipses show ~1σ covariance contours.</li>
+          <li><b>DBSCAN</b>: Density-based clustering. Core points (≥minPts within ε) expand clusters; noise labeled -1 (gray).</li>
+          <li><b>Decision regions</b>: Background colored by the predicted cluster at each location (K-Means = nearest centroid; GMM = highest mixture density). Disabled for DBSCAN.</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+
+  <footer>© <span id="year"></span> Jingxuan Liu · K-Means, GMM & DBSCAN visualizer</footer>
+</div>
+
+<script>
+  // ====== Utilities ======
+  const yearEl = document.getElementById('year'); yearEl.textContent = new Date().getFullYear();
+
+  const canvas = document.getElementById('plot');
+  const ctx = canvas.getContext('2d');
+
+  const PAD = 30;
+  const W = canvas.width, H = canvas.height;
+  const XMIN = -5, XMAX = 5, YMIN = -5, YMAX = 5;
+
+  function x2px(x){ return PAD + (x - XMIN) * (W - 2*PAD) / (XMAX - XMIN); }
+  function y2px(y){ return H - PAD - (y - YMIN) * (H - 2*PAD) / (YMAX - YMIN); }
+  function px2x(px){ return XMIN + (px - PAD) * (XMAX - XMIN) / (W - 2*PAD); }
+  function px2y(py){ return YMIN + (H - PAD - py) * (YMAX - YMIN) / (H - 2*PAD); }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+
+  const COLORS = [
+    [122,162,255], [46,204,113], [255,159,67], [255,99,132],
+    [156,136,255], [0,210,211],  [255,204,0],  [255,107,129]
+  ];
+  const NOISE_COLOR = [150,160,175];
+
+  function rgb(arr){ return `rgb(${arr[0]},${arr[1]},${arr[2]})`; }
+  function mixRGB(weights){
+    let r=0,g=0,b=0,sum=0;
+    for(let k=0;k<weights.length;k++){
+      const w = weights[k];
+      r += w*COLORS[k][0]; g += w*COLORS[k][1]; b += w*COLORS[k][2]; sum += w;
+    }
+    if(sum<=1e-12) return 'rgb(200,200,200)';
+    return `rgb(${Math.round(r/sum)},${Math.round(g/sum)},${Math.round(b/sum)})`;
+  }
+
+  // ====== Data ======
+  let points = []; // {x,y}
+  function addPoint(x,y){ points.push({x,y}); }
+  function addRandomPoints(n=80){
+    for(let i=0;i<n;i++){
+      const m = i%4;
+      let cx = [-2.5, 0.5, 2.5, -0.5][m];
+      let cy = [ 2.0,-1.0, 1.5, -2.0][m];
+      addPoint(cx + randn()*0.6, cy + randn()*0.6);
+    }
+  }
+  function randn(){
+    let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+
+  // ====== K-Means State ======
+  let K = 3;
+  let means = [];
+  let assign = [];
+
+  // ====== GMM State ======
+  let mixW = [];
+  let mu = [];
+  let Sigma = [];
+  let gamma = [];
+
+  // ====== DBSCAN State ======
+  let labels = []; // length N, -1 noise, else cluster id
+  let core = [];   // boolean per point
+
+  // ====== DOM ======
+  const algoSel   = document.getElementById('algo');
+  const kWrap     = document.getElementById('kWrap');
+  const dbWrap    = document.getElementById('dbWrap');
+  const softWrap  = document.getElementById('softWrap');
+
+  const kInp      = document.getElementById('k');
+  const epsInp    = document.getElementById('eps');
+  const minPtsInp = document.getElementById('minPts');
+
+  const softView  = document.getElementById('softView');
+  const regionsCB = document.getElementById('regions');
+
+  const randomBtn = document.getElementById('randomPts');
+  const clearBtn  = document.getElementById('clearPts');
+  const initBtn   = document.getElementById('initBtn');
+  const stepBtn   = document.getElementById('stepBtn');
+  const run10Btn  = document.getElementById('run10Btn');
+  const resetBtn  = document.getElementById('resetBtn');
+  const legend    = document.getElementById('legend');
+  const metric1   = document.getElementById('metric1');
+  const metric2   = document.getElementById('metric2');
+  const statusEl  = document.getElementById('status');
+
+  // ====== K-Means ======
+  function kmInit(){
+    means = [];
+    const used = new Set();
+    if(points.length >= K){
+      while(means.length < K){
+        const i = Math.floor(Math.random()*points.length);
+        if(used.has(i)) continue;
+        used.add(i);
+        means.push({x:points[i].x, y:points[i].y});
+      }
+    } else {
+      for(let k=0;k<K;k++){
+        means.push({x: (XMIN+0.8)+(k+1)*(XMAX-XMIN)/(K+1)-3, y: (YMIN+YMAX)/2 + (k-K/2)*0.5});
+      }
+    }
+    assign = new Array(points.length).fill(0);
+    statusEl.textContent = 'K-Means initialized';
+  }
+  function kmAssign(){
+    assign = points.map(p=>{
+      let best=-1, bestd=1e18;
+      for(let k=0;k<K;k++){
+        const dx = p.x - means[k].x, dy = p.y - means[k].y;
+        const d = dx*dx + dy*dy;
+        if(d < bestd){ bestd = d; best = k; }
+      }
+      return best;
+    });
+  }
+  function kmUpdate(){
+    const sums = new Array(K).fill(0).map(()=>({x:0,y:0,c:0}));
+    for(let i=0;i<points.length;i++){
+      const k = assign[i];
+      const p = points[i];
+      sums[k].x += p.x; sums[k].y += p.y; sums[k].c++;
+    }
+    for(let k=0;k<K;k++){
+      if(sums[k].c>0){
+        means[k].x = sums[k].x / sums[k].c;
+        means[k].y = sums[k].y / sums[k].c;
+      }
+    }
+  }
+  function kmObjective(){
+    let sse = 0;
+    for(let i=0;i<points.length;i++){
+      const p = points[i], k = assign[i];
+      const dx = p.x - means[k].x, dy = p.y - means[k].y;
+      sse += dx*dx + dy*dy;
+    }
+    return sse;
+  }
+
+  // ====== GMM ======
+  function gmmInit(){
+    kmInit();
+    mu = means.map(m=>({x:m.x,y:m.y}));
+    mixW = new Array(K).fill(1/K);
+    Sigma = new Array(K).fill(0).map(()=>[[0.8,0],[0,0.8]]);
+    gamma = new Array(points.length).fill(0).map(()=>new Array(K).fill(1/K));
+    statusEl.textContent = 'GMM initialized';
+  }
+  function gaussianPDF(p,k){
+    const m = mu[k], S = Sigma[k];
+    const dx = p.x - m.x, dy = p.y - m.y;
+    const sxx = S[0][0], sxy = S[0][1], syy = S[1][1];
+    const det = Math.max(1e-9, sxx*syy - sxy*sxy);
+    const invxx =  syy/det, invxy = -sxy/det, invyy = sxx/det;
+    const quad = dx*(invxx*dx + invxy*dy) + dy*(invxy*dx + invyy*dy);
+    const norm = 1/(2*Math.PI*Math.sqrt(det));
+    return norm * Math.exp(-0.5*quad);
+  }
+  function gmmEstep(){
+    for(let i=0;i<points.length;i++){
+      const p = points[i];
+      let denom = 0;
+      for(let k=0;k<K;k++){
+        const val = mixW[k]*gaussianPDF(p,k);
+        gamma[i][k] = val; denom += val;
+      }
+      const d = denom>1e-12 ? denom : 1e-12;
+      for(let k=0;k<K;k++) gamma[i][k] /= d;
+    }
+  }
+  function gmmMstep(){
+    const Nk = new Array(K).fill(0);
+    for(let k=0;k<K;k++){
+      let sx=0, sy=0, s=0;
+      for(let i=0;i<points.length;i++){
+        const r = gamma[i][k];
+        sx += r*points[i].x; sy += r*points[i].y; s += r;
+      }
+      Nk[k] = Math.max(1e-9,s);
+      mu[k] = {x:sx/Nk[k], y:sy/Nk[k]};
+    }
+    for(let k=0;k<K;k++){
+      let sxx=0,sxy=0,syy=0;
+      for(let i=0;i<points.length;i++){
+        const r = gamma[i][k];
+        const dx = points[i].x - mu[k].x, dy = points[i].y - mu[k].y;
+        sxx += r*dx*dx; sxy += r*dx*dy; syy += r*dy*dy;
+      }
+      const covxx = sxx/Nk[k] + 1e-3, covxy = sxy/Nk[k], covyy = syy/Nk[k] + 1e-3;
+      Sigma[k] = [[covxx,covxy],[covxy,covyy]];
+    }
+    const N = points.length || 1;
+    for(let k=0;k<K;k++) mixW[k] = Nk[k]/N;
+  }
+  function gmmLogLik(){
+    let ll=0;
+    for(const p of points){
+      let s=0; for(let k=0;k<K;k++) s += mixW[k]*gaussianPDF(p,k);
+      ll += Math.log(Math.max(s,1e-12));
+    }
+    return ll;
+  }
+
+  // ====== DBSCAN ======
+  function dbscan(eps, minPts){
+    const N = points.length;
+    labels = new Array(N).fill(-1);
+    core   = new Array(N).fill(false);
+    let clusterId = 0;
+
+    const neighbors = [];
+    for(let i=0;i<N;i++){
+      const arr=[]; const pi=points[i];
+      for(let j=0;j<N;j++){
+        if(i===j) continue;
+        const pj=points[j];
+        const d2 = (pi.x-pj.x)*(pi.x-pj.x) + (pi.y-pj.y)*(pi.y-pj.y);
+        if(d2 <= eps*eps) arr.push(j);
+      }
+      neighbors[i]=arr;
+    }
+
+    const visited = new Array(N).fill(false);
+
+    for(let i=0;i<N;i++){
+      if(visited[i]) continue;
+      visited[i] = true;
+      const neigh = neighbors[i];
+      if(neigh.length+1 < minPts){
+        labels[i] = -1; // noise (maybe becomes border later)
+        continue;
+      }
+      // create new cluster
+      labels[i] = clusterId;
+      core[i] = true;
+      const seed = neigh.slice();
+      while(seed.length){
+        const j = seed.pop();
+        if(!visited[j]){
+          visited[j] = true;
+          const neighJ = neighbors[j];
+          if(neighJ.length+1 >= minPts){
+            core[j] = true;
+            // merge neighbors
+            for(const q of neighJ){
+              if(!seed.includes(q)) seed.push(q);
+            }
+          }
+        }
+        // assign to cluster if not yet assigned
+        if(labels[j]===-1) labels[j]=clusterId; // noise becomes border
+        if(labels[j]===undefined) labels[j]=clusterId;
+      }
+      clusterId++;
+    }
+    return clusterId; // number of clusters
+  }
+
+  // ====== Drawing ======
+  function clearCanvas(){
+    ctx.clearRect(0,0,W,H);
+    // grid + axes
+    ctx.save();
+    ctx.strokeStyle = '#1e2a44'; ctx.lineWidth = 1;
+    for(let x=Math.ceil(XMIN); x<=XMAX; x++){
+      const px = x2px(x);
+      ctx.beginPath(); ctx.moveTo(px, PAD); ctx.lineTo(px, H-PAD); ctx.stroke();
+    }
+    for(let y=Math.ceil(YMIN); y<=YMAX; y++){
+      const py = y2px(y);
+      ctx.beginPath(); ctx.moveTo(PAD, py); ctx.lineTo(W-PAD, py); ctx.stroke();
+    }
+    ctx.strokeStyle = '#2d3a5a'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(PAD, y2px(0)); ctx.lineTo(W-PAD, y2px(0)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2px(0), PAD); ctx.lineTo(x2px(0), H-PAD); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawPoint(p, style='white', r=4){
+    ctx.fillStyle = style;
+    ctx.beginPath();
+    ctx.arc(x2px(p.x), y2px(p.y), r, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawCross(p, color, size=8, lw=2){
+    ctx.strokeStyle = color; ctx.lineWidth = lw;
+    const cx = x2px(p.x), cy = y2px(p.y);
+    ctx.beginPath(); ctx.moveTo(cx-size, cy); ctx.lineTo(cx+size, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy-size); ctx.lineTo(cx, cy+size); ctx.stroke();
+  }
+
+  function drawEllipse(mean, cov, color){
+    const sxx = cov[0][0], sxy = cov[0][1], syy = cov[1][1];
+    const trace = sxx + syy;
+    const det = sxx*syy - sxy*sxy;
+    const tmp = Math.sqrt(Math.max(0, trace*trace/4 - det));
+    const l1 = trace/2 + tmp, l2 = trace/2 - tmp;
+    const angle = 0.5 * Math.atan2(2*sxy, sxx - syy);
+    const a = Math.sqrt(Math.max(l1, 1e-6));
+    const b = Math.sqrt(Math.max(l2, 1e-6));
+
+    ctx.save();
+    ctx.translate(x2px(mean.x), y2px(mean.y));
+    ctx.rotate(-angle);
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.9;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for(let t=0;t<=360;t+=3){
+      const rad = t*Math.PI/180;
+      const x = a*Math.cos(rad), y = b*Math.sin(rad);
+      const px = x2px(0) - x2px(-x);
+      const py = y2px(0) - y2px(y);
+      if(t===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Decision regions (coarse grid)
+  function drawRegions(){
+    if(!regionsCB.checked) return;
+    const algo = algoSel.value;
+    if(algo==='dbscan') return; // disabled for DBSCAN
+
+    const step = 8; // pixel step
+    const img = ctx.createImageData(W, H);
+    function putPixel(px,py, r,g,b,a=100){
+      if(px<0||py<0||px>=W||py>=H) return;
+      const idx = (py*W+px)*4;
+      img.data[idx]=r; img.data[idx+1]=g; img.data[idx+2]=b; img.data[idx+3]=a;
+    }
+
+    for(let py=PAD; py<H-PAD; py+=step){
+      for(let px=PAD; px<W-PAD; px+=step){
+        const x = px2x(px), y = px2y(py);
+        let color = [40,46,60]; // fallback
+        if(algo==='kmeans' && means.length===K){
+          // nearest centroid
+          let best=-1, bestd=1e18;
+          for(let k=0;k<K;k++){
+            const dx=x-means[k].x, dy=y-means[k].y, d=dx*dx+dy*dy;
+            if(d<bestd){bestd=d; best=k;}
+          }
+          color = COLORS[best];
+        } else if(algo==='gmm' && mu.length===K && Sigma.length===K){
+          // max mixture density
+          let best=-1, bestv=-1;
+          for(let k=0;k<K;k++){
+            const v = mixW[k]*gaussianPDF({x,y},k);
+            if(v>bestv){bestv=v; best=k;}
+          }
+          color = COLORS[best];
+        }
+        // fill block
+        for(let yy=0; yy<step; yy++){
+          for(let xx=0; xx<step; xx++){
+            putPixel(px+xx, py+yy, color[0], color[1], color[2], 38);
+          }
+        }
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  function render(){
+    clearCanvas();
+    drawRegions();
+
+    // Legend
+    legend.innerHTML = '';
+    const algo = algoSel.value;
+    if(algo!=='dbscan'){
+      for(let k=0;k<K;k++){
+        const el = document.createElement('div');
+        el.className='swatch';
+        const d = document.createElement('div'); d.className='dot'; d.style.background = rgb(COLORS[k]);
+        el.appendChild(d); el.appendChild(document.createTextNode(` Cluster ${k+1}`));
+        legend.appendChild(el);
+      }
+    } else {
+      // DBSCAN legend shows up to 8 colors + noise
+      const used = new Set(labels.filter(l=>l>=0));
+      [...used].slice(0,8).forEach(cid=>{
+        const el = document.createElement('div');
+        el.className='swatch';
+        const d = document.createElement('div'); d.className='dot'; d.style.background = rgb(COLORS[cid%COLORS.length]);
+        el.appendChild(d); el.appendChild(document.createTextNode(` Cluster ${cid}`));
+        legend.appendChild(el);
+      });
+      const el = document.createElement('div');
+      el.className='swatch';
+      const d = document.createElement('div'); d.className='dot'; d.style.background = rgb(NOISE_COLOR);
+      el.appendChild(d); el.appendChild(document.createTextNode(' Noise (-1)'));
+      legend.appendChild(el);
+    }
+
+    const soft = softView.checked;
+
+    // Points
+    if(algo==='gmm' && soft && gamma.length===points.length){
+      for(let i=0;i<points.length;i++){
+        drawPoint(points[i], mixRGB(gamma[i]), 4.5);
+      }
+    } else if(algo==='kmeans' && assign.length===points.length){
+      for(let i=0;i<points.length;i++){
+        const k = clamp(assign[i],0,K-1);
+        drawPoint(points[i], rgb(COLORS[k]));
+      }
+    } else if(algo==='dbscan' && labels.length===points.length){
+      for(let i=0;i<points.length;i++){
+        const lab = labels[i];
+        const c = (lab<0) ? NOISE_COLOR : COLORS[lab%COLORS.length];
+        const r = core[i] ? 5 : 4; // core slightly bigger
+        drawPoint(points[i], rgb(c), r);
+      }
+    } else {
+      for(const p of points) drawPoint(p, '#d7e1ff');
+    }
+
+    // Centers / Means
+    if(algo==='kmeans' && means.length===K){
+      for(let k=0;k<K;k++) drawCross(means[k], rgb(COLORS[k]), 10, 2.5);
+    }
+    if(algo==='gmm' && mu.length===K){
+      for(let k=0;k<K;k++){
+        drawCross(mu[k], rgb(COLORS[k]), 10, 2.5);
+        if(Sigma[k]) drawEllipse(mu[k], Sigma[k], rgb(COLORS[k]));
+      }
+    }
+
+    // Metrics
+    if(algo==='kmeans' && assign.length===points.length && means.length===K){
+      metric1.textContent = `K-Means SSE: ${kmObjective().toFixed(3)}`;
+      metric2.textContent = `Points: ${points.length}`;
+    } else if(algo==='gmm' && mu.length===K && Sigma.length===K){
+      metric1.textContent = `GMM Log-Lik: ${gmmLogLik().toFixed(3)}`;
+      metric2.textContent = `Avg. responsibility entropy: ${avgEntropy().toFixed(3)}`;
+    } else if(algo==='dbscan' && labels.length===points.length){
+      const clusters = new Set(labels.filter(l=>l>=0)).size;
+      const noise = labels.filter(l=>l<0).length;
+      metric1.textContent = `DBSCAN clusters: ${clusters}`;
+      metric2.textContent = `Noise points: ${noise}`;
+    } else {
+      metric1.textContent = '—';
+      metric2.textContent = `Points: ${points.length}`;
+    }
+  }
+
+  function avgEntropy(){
+    if(!gamma || gamma.length===0) return 0;
+    let s=0;
+    for(const g of gamma){
+      let e=0; for(let k=0;k<K;k++){ const p=Math.max(1e-12,g[k]); e += -p*Math.log2(p); }
+      s += e;
+    }
+    return s/gamma.length;
+  }
+
+  // ====== Interaction ======
+  canvas.addEventListener('click', (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const x = px2x(e.clientX - rect.left);
+    const y = px2y(e.clientY - rect.top);
+    addPoint(x,y);
+    statusEl.textContent = 'Point added';
+    // invalidate previous assignments
+    assign=[]; gamma=[]; labels=[];
+    render();
+  });
+
+  randomBtn.addEventListener('click', ()=>{
+    addRandomPoints(80);
+    assign=[]; gamma=[]; labels=[];
+    statusEl.textContent='Random data added';
+    render();
+  });
+
+  clearBtn.addEventListener('click', ()=>{
+    points=[]; assign=[]; gamma=[]; labels=[]; means=[]; mu=[]; Sigma=[]; mixW=[];
+    statusEl.textContent='Points cleared';
+    render();
+  });
+
+  kInp.addEventListener('change', ()=>{
+    K = clamp(parseInt(kInp.value||'3',10),1,8);
+    kInp.value = K;
+    statusEl.textContent = `K set to ${K}`;
+    render();
+  });
+
+  algoSel.addEventListener('change', ()=>{
+    const a = algoSel.value;
+    // show/hide relevant controls
+    kWrap.style.display    = (a==='kmeans' || a==='gmm') ? 'inline-flex' : 'none';
+    softWrap.style.display = (a==='gmm') ? 'inline-flex' : 'none';
+    dbWrap.style.display   = (a==='dbscan') ? 'inline-flex' : 'none';
+    regionsCB.disabled     = (a==='dbscan'); // regions for kmeans/gmm only
+    if(a==='dbscan'){ regionsCB.checked=false; }
+
+    statusEl.textContent = `Algorithm: ${a.toUpperCase()}`;
+    render();
+  });
+
+  softView.addEventListener('change', ()=> render());
+  regionsCB.addEventListener('change', ()=> render());
+
+  initBtn.addEventListener('click', ()=>{
+    if(points.length===0){ addRandomPoints(80); }
+    const a = algoSel.value;
+    if(a==='kmeans') kmInit();
+    else if(a==='gmm') gmmInit();
+    else statusEl.textContent = 'DBSCAN: no init needed';
+    render();
+  });
+
+  stepBtn.addEventListener('click', ()=>{
+    const a = algoSel.value;
+    if(a==='kmeans'){
+      if(means.length!==K) kmInit();
+      kmAssign(); kmUpdate();
+      statusEl.textContent = 'K-Means step';
+    } else if(a==='gmm'){
+      if(mu.length!==K) gmmInit();
+      gmmEstep(); gmmMstep();
+      statusEl.textContent = 'GMM EM step (E→M)';
+    } else {
+      // DBSCAN run once
+      const eps = parseFloat(epsInp.value||'0.9');
+      const minPts = parseInt(minPtsInp.value||'5',10);
+      const c = dbscan(eps, minPts);
+      statusEl.textContent = `DBSCAN done (clusters=${c})`;
+    }
+    render();
+  });
+
+  run10Btn.addEventListener('click', ()=>{
+    const a = algoSel.value;
+    if(a==='kmeans'){
+      if(means.length!==K) kmInit();
+      for(let t=0;t<10;t++){ kmAssign(); kmUpdate(); }
+      statusEl.textContent = 'K-Means ×10';
+    } else if(a==='gmm'){
+      if(mu.length!==K) gmmInit();
+      for(let t=0;t<10;t++){ gmmEstep(); gmmMstep(); }
+      statusEl.textContent = 'GMM ×10';
+    } else {
+      // DBSCAN is not iterative; just run
+      const eps = parseFloat(epsInp.value||'0.9');
+      const minPts = parseInt(minPtsInp.value||'5',10);
+      const c = dbscan(eps, minPts);
+      statusEl.textContent = `DBSCAN done (clusters=${c})`;
+    }
+    render();
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    means=[]; assign=[];
+    mixW=[]; mu=[]; Sigma=[]; gamma=[];
+    labels=[]; core=[];
+    statusEl.textContent = 'State reset';
+    render();
+  });
+
+  // ====== boot ======
+  K = parseInt(kInp.value,10);
+  addRandomPoints(80);
+  kmInit();
+  render();
+</script>
+</body>
+</html>

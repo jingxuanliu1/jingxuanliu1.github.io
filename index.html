@@ -8,6 +8,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
+    /* Ensure header sits above hero scene/image */
+    header { z-index: 200; }
+
+    /* Make sure the dropdown panel is on top of everything under the header */
+    .ml-menu-panel { z-index: 1000; }
+
+    /* (Optional) Keep the hero scene below header-level overlays */
+    .scene { position: relative; z-index: 0; }
+    
     :root { --bg:#0b0d10; --card:#12161b; --text:#e6eef8; --muted:#9fb2c8; --accent:#7aa2ff; }
     * { box-sizing: border-box; }
     body { margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background:linear-gradient(120deg,#0b0d10,#0f1320 60%); }

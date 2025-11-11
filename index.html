@@ -5,21 +5,33 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Jingxuan Liu — Portfolio</title>
   <meta name="description" content="Personal website and portfolio of Jingxuan Liu." />
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
   <style>
     /* Ensure header sits above hero scene/image */
     header { z-index: 200; }
-
-    /* Make sure the dropdown panel is on top of everything under the header */
     .ml-menu-panel { z-index: 1000; }
-
-    /* (Optional) Keep the hero scene below header-level overlays */
     .scene { position: relative; z-index: 0; }
-    
+
     :root { --bg:#0b0d10; --card:#12161b; --text:#e6eef8; --muted:#9fb2c8; --accent:#7aa2ff; }
     * { box-sizing: border-box; }
-    body { margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background:linear-gradient(120deg,#0b0d10,#0f1320 60%); }
+
+    /* Font + rendering fixes */
+    html {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-synthesis-weight: none;
+    }
+    h1, h2, h3 { font-weight: 800; }
+    strong, b  { font-weight: 700; }
+
+    body { margin:0; color:var(--text); background:linear-gradient(120deg,#0b0d10,#0f1320 60%); }
     a { color:var(--accent); text-decoration:none; }
     a:hover { text-decoration:underline; }
     .wrap { max-width:1000px; margin:0 auto; padding:24px; position:relative; z-index:1; }
@@ -38,12 +50,9 @@
     .tag { display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px; background:#0b0d10; border:1px solid #1b2230; color:var(--muted); margin-right:6px; }
     img { width:100%; border-radius:12px; display:block; }
 
-    /* Background starfield canvas */
     #stars{position:fixed; inset:0; z-index:0; pointer-events:none;}
-    /* Lift site content above the canvas */
     .wrap{position:relative; z-index:1;}
 
-    /* Chat widget styles */
     .chat-toggle{position:fixed; right:18px; bottom:18px; z-index:3; border:none; background:var(--accent); color:#0b0d10; font-weight:800; padding:12px 14px; border-radius:999px; box-shadow:0 10px 24px rgba(0,0,0,.35); cursor:pointer;}
     .chatbox{position:fixed; right:18px; bottom:76px; z-index:3; width:min(360px, calc(100vw - 36px)); background:var(--card); border:1px solid #1b2230; border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,.45); padding:14px;}
     .chatbox-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
@@ -53,10 +62,8 @@
     #chat-form input, #chat-form textarea{width:100%; padding:10px; border-radius:10px; border:1px solid #1b2230; background:#0b0d10; color:#e6eef8;}  
     .chat-actions{display:flex; align-items:center; gap:10px;}
     .chat-actions .hint{color:var(--muted);} 
-    /* Toast */
     .toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#0b0d10; border:1px solid #1b2230; color:#e6eef8; padding:10px 14px; border-radius:12px; box-shadow:0 10px 24px rgba(0,0,0,.35); z-index:4;}
 
-    /* ====== Scene (light-on + walking silhouette) ====== */
     .scene{ position:relative; overflow:hidden; }
     .scene img{ display:block; width:100%; border-radius:12px; filter:brightness(.65) contrast(1.02); transition:filter 900ms ease; }
     .scene .light{
@@ -104,7 +111,6 @@
       .scene .light{ transition:none; }
     }
 
-    /* ===== ML dropdown (new) ===== */
     .ml-menu{ position:relative; display:inline-block; margin-left:6px; }
     .ml-btn{ font-weight:700; padding:8px 10px; border-radius:8px; background:#182035; border:1px solid #273352; color:#c7d6f3; cursor:pointer; }
     .ml-menu-panel{

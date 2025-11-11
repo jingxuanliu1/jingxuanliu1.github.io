@@ -59,8 +59,6 @@
     /* ====== Scene (light-on + walking silhouette) ====== */
     .scene{ position:relative; overflow:hidden; }
     .scene img{ display:block; width:100%; border-radius:12px; filter:brightness(.65) contrast(1.02); transition:filter 900ms ease; }
-
-    /* “Light turns on” overlay */
     .scene .light{
       position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity 900ms ease;
       background:
@@ -72,8 +70,6 @@
       mix-blend-mode:screen;
       border-radius:12px;
     }
-
-    /* Walking silhouette */
     .walker{
       position:absolute; bottom:6%; left:-28%;
       width:20%; opacity:0;
@@ -84,8 +80,6 @@
     @media (prefers-color-scheme: dark){
       .walker circle,.walker path{ fill:#e6eef8; opacity:.9; }
     }
-
-    /* Activated state */
     .scene-on img{ filter:brightness(1.05) contrast(1.05); }
     .scene-on .light{ opacity:1; }
     .scene-on .walker{
@@ -94,22 +88,16 @@
         walker-x 5.2s ease-in-out forwards,
         walker-bob 750ms ease-in-out infinite;
     }
-
-    /* Horizontal travel */
     @keyframes walker-x{
       0%   { transform:translateX(0) translateY(0) scaleX(1); }
       50%  { transform:translateX(80vw) translateY(0) scaleX(1); }
       55%  { transform:translateX(80vw) translateY(0) scaleX(-1); }
       100% { transform:translateX(15vw) translateY(0) scaleX(-1); }
     }
-
-    /* Subtle bob */
     @keyframes walker-bob{
       0%,100% { transform:translateX(var(--walker-x,0)) translateY(0) scaleX(var(--walker-flip,1)); }
       50%     { transform:translateX(var(--walker-x,0)) translateY(-2px) scaleX(var(--walker-flip,1)); }
     }
-
-    /* Respect reduced motion */
     @media (prefers-reduced-motion: reduce){
       .scene-on .walker{ animation:none; }
       .scene img{ transition:none; }
@@ -141,7 +129,7 @@
         <a href="mailto:jingxuanliu317@gmail.com" aria-label="Email Jingxuan Liu">jingxuanliu317@gmail.com</a>
         <a href="/tasks.html" aria-label="Task dashboard">Tasks</a>
 
-        <!-- ===== ML DROPDOWN (replaces single ML Viz link) ===== -->
+        <!-- ===== ML DROPDOWN ===== -->
         <div class="ml-menu">
           <button id="ml-btn" class="ml-btn" type="button" aria-haspopup="true" aria-expanded="false">ML ▾</button>
           <div id="ml-menu" class="ml-menu-panel" role="menu" aria-label="Machine Learning pages">
@@ -149,7 +137,6 @@
             <a href="/ml-nn.html"  class="ml-item" role="menuitem">Neural Network — Regression + “Lottery”</a>
           </div>
         </div>
-        <!-- ================================================ -->
       </nav>
     </header>
 
@@ -170,8 +157,6 @@
         <div class="card scene" id="hero-scene" aria-label="Preview scene with light turning on and a passerby silhouette">
           <img alt="Preview" src="https://picsum.photos/800/500" />
           <div class="light" aria-hidden="true"></div>
-
-          <!-- Inline SVG silhouette -->
           <svg class="walker" viewBox="0 0 64 64" aria-hidden="true">
             <circle cx="33" cy="14" r="6" />
             <path d="M31 20 l-3 12 7 8 5 12 6-2 -4-13 4-7 3-7 -4-5 -6 3z" />
@@ -182,20 +167,37 @@
 
       <section id="projects">
         <h2>Projects</h2>
-        <div class="grid grid-3">
-          <article class="card">
-            <h3>YouTube Clickability Study</h3>
-            <p>Interactive analysis of title/thumbnail “clickability” for YouTube videos
-               (views-per-subscriber, clustering, feature importance).</p>
-           <div>
-                <span class="tag">Python</span><span class="tag">Pandas</span>
-                <span class="tag">ML</span><span class="tag">Visualization</span>
+
+        <!-- ===== New: YouTube Clickability Study (works everywhere) ===== -->
+        <article class="card">
+          <h3>YouTube Clickability Study</h3>
+          <p class="muted">Interactive analysis of title/thumbnail “clickability” for YouTube videos (views-per-subscriber, clustering, feature importance).</p>
+          <div>
+            <span class="tag">Python</span><span class="tag">Pandas</span>
+            <span class="tag">ML</span><span class="tag">Visualization</span>
           </div>
-          <p>
-    <a href="https://github.gatech.edu/pages/sjin308/YouTube_Clickability_Study"
-       target="_blank" rel="noopener">Open Live Report ↗</a>
-  </p>
-</article
+          <!-- Optional: add a local preview image you capture: /assets/clickability-preview.jpg -->
+          <!-- <a href="https://github.gatech.edu/pages/sjin308/YouTube_Clickability_Study" target="_blank" rel="noopener">
+            <img src="/assets/clickability-preview.jpg" alt="Preview of YouTube Clickability Study" />
+          </a> -->
+          <p style="margin-top:10px;">
+            <a href="https://github.gatech.edu/pages/sjin308/YouTube_Clickability_Study"
+               target="_blank" rel="noopener">Open Live Report ↗</a>
+          </p>
+        </article>
+
+        <!-- ===== If you later mirror the report to hosting you control, you can embed it: =====
+        <div class="card" style="padding:0; overflow:hidden; margin-top:16px;">
+          <iframe
+            src="https://your-embed-hosting.example/"  <!-- replace with your mirrored URL -->
+            style="width:100%; height:720px; border:0;"
+            loading="lazy" referrerpolicy="no-referrer"
+            title="YouTube Clickability Study (Embedded)">
+          </iframe>
+        </div>
+        ===== End optional embed ===== -->
+
+        <div class="grid grid-3" style="margin-top:16px;">
           <article class="card">
             <h3>Time Map — Task & Time Manager</h3>
             <p class="muted">Full-stack mobile website using Django/Python with user auth and MySQL.</p>
@@ -290,21 +292,19 @@ document.getElementById('year').textContent = new Date().getFullYear();
   // Respect reduced motion
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ---- Adaptive quality (auto-tunes DPR, density, line limits) ----
+  // ---- Adaptive quality ----
   let quality = reduceMotion ? 1 : 3; // 3=high, 2=med, 1=low
-
   function currentTunables(){
     if (quality === 3) return { MAX_DPR:1.5, DENSITY:0.18, LINES:700, GRID_N:2 };
     if (quality === 2) return { MAX_DPR:1.35, DENSITY:0.14, LINES:450, GRID_N:3 };
     return               { MAX_DPR:1.2, DENSITY:0.10, LINES:300, GRID_N:4 };
   }
-
   let fpsSamples = [];
   let lastFPSDropAt = 0;
   function trackFPS(dt){
     const fps = 1 / Math.max(0.0001, dt);
     fpsSamples.push(fps);
-    if (fpsSamples.length > 30) fpsSamples.shift(); // ~0.5s window @60fps
+    if (fpsSamples.length > 30) fpsSamples.shift();
     const avg = fpsSamples.reduce((a,b)=>a+b,0) / fpsSamples.length;
     const now = performance.now();
     if (avg < 48 && quality > 1 && now - lastFPSDropAt > 2000){
@@ -313,41 +313,30 @@ document.getElementById('year').textContent = new Date().getFullYear();
       applyTunablesAndResize();
     }
   }
-
-  // Tunables (updated by quality)
   let MAX_DPR = 1.5, STAR_DENSITY = 0.18, MAX_LINES_PER_FRAME = 700, GRID_REBUILD_EVERY_N = 2;
 
   function applyTunablesAndResize(){
     const t = currentTunables();
-    MAX_DPR = t.MAX_DPR;
-    STAR_DENSITY = t.DENSITY;
-    MAX_LINES_PER_FRAME = t.LINES;
-    GRID_REBUILD_EVERY_N = t.GRID_N;
+    MAX_DPR = t.MAX_DPR; STAR_DENSITY = t.DENSITY;
+    MAX_LINES_PER_FRAME = t.LINES; GRID_REBUILD_EVERY_N = t.GRID_N;
     resize();
   }
 
-  // Animation speed (slower if reduced motion)
   const SPEED_SCALE = reduceMotion ? 0.25 : 1.0;
+  const MAX_DIST = 130, MOUSE_RADIUS = 180;
 
-  // Constellation parameters
-  const MAX_DIST = 130;     // max distance to draw a line (CSS px)
-  const MOUSE_RADIUS = 180; // lines appear when stars are near the cursor
-
-  // Pre-rendered glow sprite
   let glowSprite = null;
   function makeGlowSprite(){
     const size = 64;
     const c = document.createElement('canvas');
     c.width = c.height = size;
     const g = c.getContext('2d');
-
     const grad = g.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
     grad.addColorStop(0.0, 'rgba(255,255,255,0.95)');
     grad.addColorStop(0.25, 'rgba(255,255,255,0.60)');
     grad.addColorStop(0.55, 'rgba(122,162,255,0.35)');
     grad.addColorStop(1.0, 'rgba(122,162,255,0.00)');
-    g.fillStyle = grad;
-    g.fillRect(0,0,size,size);
+    g.fillStyle = grad; g.fillRect(0,0,size,size);
     return c;
   }
 
@@ -393,7 +382,6 @@ document.getElementById('year').textContent = new Date().getFullYear();
     }
   }
 
-  // Spatial grid cache for constellation lines
   let cachedGrid = null;
   let frameCount = 0;
   function buildGrid(cell){
@@ -429,7 +417,6 @@ document.getElementById('year').textContent = new Date().getFullYear();
     // 2) Constellation lines near mouse (throttled)
     if (mouse.active){
       const cell = 130;
-
       if (frameCount % 2 === 0 || !cachedGrid){
         cachedGrid = buildGrid(cell);
       }
@@ -480,7 +467,6 @@ document.getElementById('year').textContent = new Date().getFullYear();
     }
   }
 
-  // Main loop
   let last = performance.now();
   function loop(now){
     const dt = Math.min(0.05, (now - last)/1000);
@@ -509,12 +495,8 @@ document.getElementById('year').textContent = new Date().getFullYear();
 
 /* Chat widget logic: submit via Form endpoint if configured, else mailto fallback */
 (function(){
-  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  // Set this to your Formspree/Getform endpoint to send directly to your email.
-  // Example: const FORM_ENDPOINT = "https://formspree.io/f/abcdwxyz";
-  const FORM_ENDPOINT = ""; // <-- PUT YOUR ENDPOINT HERE (leave empty to use mailto fallback)
-  const DEST_EMAIL = "jingxuanliu317@gmail.com"; // used for mailto fallback
-  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  const FORM_ENDPOINT = ""; // <-- optional: your Formspree/Getform endpoint
+  const DEST_EMAIL = "jingxuanliu317@gmail.com"; // mailto fallback
 
   const toggle = document.getElementById('chat-toggle');
   const box = document.getElementById('chatbox');
@@ -553,7 +535,6 @@ document.getElementById('year').textContent = new Date().getFullYear();
 
     if (!email) email = 'Anonymous';
 
-    // If a Form endpoint is configured, post directly (no mail client needed)
     if (FORM_ENDPOINT){
       try{
         const res = await fetch(FORM_ENDPOINT, {
@@ -568,14 +549,12 @@ document.getElementById('year').textContent = new Date().getFullYear();
       }catch(err){
         console.error(err);
         toast('Send failed. Using email instead…');
-        // fallback to mailto
         const subject = encodeURIComponent('Portfolio message from ' + name);
         const body = encodeURIComponent(`From: ${name} <${email}>\n\n${msg}\n\n— Sent from jingxuanliu.com`);
         window.location.href = `mailto:${DEST_EMAIL}?subject=${subject}&body=${body}`;
         close();
       }
     } else {
-      // No endpoint set → open mail client (previous behavior)
       const subject = encodeURIComponent('Portfolio message from ' + name);
       const body = encodeURIComponent(`From: ${name} <${email}>\n\n${msg}\n\n— Sent from jingxuanliu.com`);
       window.location.href = `mailto:${DEST_EMAIL}?subject=${subject}&body=${body}`;
@@ -600,11 +579,9 @@ document.getElementById('year').textContent = new Date().getFullYear();
     toggle(menu.style.display !== 'block');
   });
 
-  // close on outside click
   document.addEventListener('click', (e)=>{
     if(!menu.contains(e.target) && e.target !== btn) toggle(false);
   });
-  // close on Escape
   document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') toggle(false); });
 })();
   </script>

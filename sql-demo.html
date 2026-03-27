@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SQL Dashboard — MySQL Data Analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+  <style>
+    :root{--bg:#0b0d10;--card:#12161b;--muted:#9fb2c8;--text:#e6eef8;--accent:#7aa2ff;--success:#2ecc71;--warn:#f39c12;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(120deg,#0b0d10,#0f1320 60%);color:var(--text)}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1200px;margin:0 auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;position:sticky;top:0;background:rgba(11,13,16,.75);backdrop-filter:blur(8px);border-bottom:1px solid #1b2230;z-index:2}
+    .brand{font-weight:800;font-size:18px}
+    .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:var(--accent);color:#0b0d10;font-weight:700;border:none;cursor:pointer}
+    .btn.ghost{background:#182035;color:#c7d6f3;border:1px solid #273352}
+    .btn:hover{opacity:.9}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .card{background:var(--card);border:1px solid #1b2230;border-radius:16px;padding:16px;box-shadow:0 10px 28px rgba(0,0,0,.25);margin-top:14px}
+    h2{font-size:20px;margin:0 0 12px}
+    h3{margin:0 0 8px}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+    select{background:#0f1320;border:1px solid #1f2538;color:var(--text);padding:10px 12px;border-radius:10px;font-size:14px;cursor:pointer}
+    textarea{width:100%;background:#0f1320;border:1px solid #1f2538;color:var(--text);padding:10px 12px;border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;resize:vertical;min-height:120px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media (max-width:1000px){.grid{grid-template-columns:1fr}}
+    .muted{color:var(--muted)}
+    .pill{background:#0f1423;border:1px solid #20273c;border-radius:999px;padding:6px 10px;font-size:12px;display:inline-block}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;background:#0c1120;padding:10px;border-radius:10px;border:1px solid #1b2230;overflow-x:auto}
+    canvas{max-width:100%;height:auto}
+    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+    th,td{padding:10px;text-align:left;border-bottom:1px solid #1b2230}
+    th{background:#0f1423;font-weight:700;color:var(--accent)}
+    tr:hover{background:#0f1423}
+    .results{max-height:400px;overflow-y:auto}
+    .query-btn{display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;background:#0f1423;border:1px solid #20273c;border-radius:10px;color:var(--text);cursor:pointer;font-weight:600;transition:.2s}
+    .query-btn:hover{background:#182035;border-color:#273352}
+    .query-btn.active{background:var(--accent);color:#0b0d10}
+    .schema-box{background:#0f1423;border:1px solid #20273c;border-radius:10px;padding:12px;margin-bottom:10px}
+    .schema-table{font-weight:600;color:var(--accent);margin-bottom:6px}
+    .schema-col{font-size:12px;color:var(--muted);padding:3px 0}
+    /* Modal styles */
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:999;align-items:center;justify-content:center}
+    .modal.active{display:flex}
+    .modal-content{background:var(--card);border:1px solid #1b2230;border-radius:16px;padding:24px;max-width:900px;max-height:80vh;overflow-y:auto;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .modal-header h2{margin:0;font-size:22px}
+    .modal-close{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;padding:0;width:30px;height:30px}
+    .modal-close:hover{color:var(--text)}
+    .db-table{margin-bottom:20px}
+    .db-table h3{color:var(--accent);margin-bottom:10px}
+    .db-table .records{display:grid;gap:8px}
+    .record-card{background:#0f1423;border:1px solid #20273c;border-radius:8px;padding:10px;font-size:12px}
+    footer{color:var(--muted);padding:28px 0 60px;text-align:center;border-top:1px solid #1b2230;margin-top:28px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">SQL Dashboard — MySQL</div>
+    <nav class="row">
+      <button class="btn ghost" id="toggleViewBtn" aria-label="Toggle code view">📊 View Database</button>
+      <a class="btn" href="/" aria-label="Back to home">← Back to Home</a>
+    </nav>
+  </header>
+
+  <section class="card">
+    <h2>Database Schema</h2>
+    <p class="muted" style="margin:0 0 14px">Sample e-commerce database with products, customers, and orders.</p>
+    <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="schema-box">
+        <div class="schema-table">📦 products</div>
+        <div class="schema-col">product_id (PK)</div>
+        <div class="schema-col">name</div>
+        <div class="schema-col">category</div>
+        <div class="schema-col">price</div>
+        <div class="schema-col">stock</div>
+      </div>
+      <div class="schema-box">
+        <div class="schema-table">👥 customers</div>
+        <div class="schema-col">customer_id (PK)</div>
+        <div class="schema-col">name</div>
+        <div class="schema-col">email</div>
+        <div class="schema-col">country</div>
+        <div class="schema-col">signup_date</div>
+      </div>
+      <div class="schema-box">
+        <div class="schema-table">🛒 orders</div>
+        <div class="schema-col">order_id (PK)</div>
+        <div class="schema-col">customer_id (FK)</div>
+        <div class="schema-col">product_id (FK)</div>
+        <div class="schema-col">quantity</div>
+        <div class="schema-col">order_date</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Query Explorer</h2>
+    <p class="muted" style="margin:0 0 14px">Select a query to view results and visualizations.</p>
+    
+    <div class="grid">
+      <!-- Queries List -->
+      <div>
+        <label style="margin-bottom:12px">Available Queries</label>
+        <button class="query-btn active" data-query="revenue">💰 Revenue by Category</button>
+        <button class="query-btn" data-query="top-customers">⭐ Top 5 Customers</button>
+        <button class="query-btn" data-query="orders-trend">📈 Orders Trend (Last 6 Months)</button>
+        <button class="query-btn" data-query="customer-segment">🎯 Customer Segments</button>
+        <button class="query-btn" data-query="product-performance">🏆 Product Performance</button>
+        <button class="query-btn" data-query="inventory-alert">⚠️ Low Stock Alert</button>
+      </div>
+
+      <!-- SQL Query Display -->
+      <div>
+        <label>SQL Query</label>
+        <div class="mono" id="sqlDisplay" style="white-space:pre-wrap;word-break:break-all;"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Results & Visualization</h2>
+    <div class="grid" style="grid-template-columns:1.2fr 1fr">
+      <div>
+        <div id="chartContainer" style="position:relative;height:350px">
+          <canvas id="resultChart"></canvas>
+        </div>
+      </div>
+      <div>
+        <label>Query Statistics</label>
+        <div class="pill" style="display:block;margin-bottom:8px">
+          Rows: <b id="rowCount">0</b>
+        </div>
+        <div class="pill" style="display:block;margin-bottom:8px">
+          Execution: <b>~2ms</b>
+        </div>
+        <div class="pill" style="display:block">
+          Type: <b id="queryType">SELECT</b>
+        </div>
+      </div>
+    </div>
+
+    <label style="margin-top:16px">Results Table</label>
+    <div class="results">
+      <table id="resultsTable">
+        <thead><tr><th>Loading...</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Database View Modal -->
+  <div class="modal" id="dbModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📊 Raw Database Records</h2>
+        <button class="modal-close" id="closeModal">✕</button>
+      </div>
+      
+      <div class="db-table">
+        <h3>👥 customers (500 records)</h3>
+        <div class="records" id="customersView"></div>
+      </div>
+
+      <div class="db-table">
+        <h3>📦 products (150 records)</h3>
+        <div class="records" id="productsView"></div>
+      </div>
+
+      <div class="db-table">
+        <h3>🛒 orders (3,247 records)</h3>
+        <div class="records" id="ordersView"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>© <span id="year"></span> Jingxuan Liu · SQL Portfolio Project</footer>
+</div>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// Fake database records
+const fakeDatabase = {
+  customers: [
+    {id: 1001, name: 'Sarah Johnson', email: 'sarah.j@example.com', country: 'USA', signup_date: '2023-01-15'},
+    {id: 1002, name: 'Michael Chen', email: 'mchen@example.com', country: 'Canada', signup_date: '2023-02-08'},
+    {id: 1003, name: 'Emma Wilson', email: 'emma.w@example.com', country: 'UK', signup_date: '2023-03-20'},
+    {id: 1004, name: 'David Smith', email: 'dsmith@example.com', country: 'USA', signup_date: '2023-04-12'},
+    {id: 1005, name: 'Lisa Anderson', email: 'lisa.a@example.com', country: 'Australia', signup_date: '2023-05-05'},
+    {id: 1006, name: 'James Brown', email: 'jbrown@example.com', country: 'USA', signup_date: '2023-06-18'},
+    {id: 1007, name: 'Sophie Martin', email: 'smartin@example.com', country: 'France', signup_date: '2023-07-22'},
+    {id: 1008, name: 'Carlos Rodriguez', email: 'crodriguez@example.com', country: 'Spain', signup_date: '2023-08-10'},
+    {id: 1009, name: 'Yuki Tanaka', email: 'ytanaka@example.com', country: 'Japan', signup_date: '2023-09-14'},
+    {id: 1010, name: 'Anna Mueller', email: 'amueller@example.com', country: 'Germany', signup_date: '2023-10-08'}
+  ],
+  products: [
+    {id: 101, name: 'Wireless Headphones', category: 'Electronics', price: 79.99, stock: 45},
+    {id: 102, name: 'USB-C Cable', category: 'Electronics', price: 12.99, stock: 200},
+    {id: 103, name: 'Phone Case', category: 'Electronics', price: 15.99, stock: 32},
+    {id: 104, name: 'Cotton T-Shirt', category: 'Clothing', price: 29.99, stock: 150},
+    {id: 105, name: 'Running Shoes', category: 'Sports', price: 125.50, stock: 18},
+    {id: 106, name: 'Yoga Mat', category: 'Sports', price: 45.50, stock: 8},
+    {id: 107, name: 'Coffee Table', category: 'Home & Garden', price: 189.20, stock: 0},
+    {id: 108, name: 'SQL Basics Book', category: 'Books', price: 28.50, stock: 3},
+    {id: 109, name: 'Desk Lamp', category: 'Home & Garden', price: 68.90, stock: 15},
+    {id: 110, name: 'Winter Jacket', category: 'Clothing', price: 89.75, stock: 42}
+  ],
+  orders: [
+    {id: 50001, customer_id: 1001, product_id: 101, quantity: 1, order_date: '2024-10-05'},
+    {id: 50002, customer_id: 1002, product_id: 104, quantity: 2, order_date: '2024-10-08'},
+    {id: 50003, customer_id: 1003, product_id: 105, quantity: 1, order_date: '2024-10-12'},
+    {id: 50004, customer_id: 1001, product_id: 108, quantity: 3, order_date: '2024-10-15'},
+    {id: 50005, customer_id: 1004, product_id: 102, quantity: 5, order_date: '2024-10-18'},
+    {id: 50006, customer_id: 1005, product_id: 109, quantity: 1, order_date: '2024-10-22'},
+    {id: 50007, customer_id: 1006, product_id: 106, quantity: 2, order_date: '2024-10-25'},
+    {id: 50008, customer_id: 1002, product_id: 110, quantity: 1, order_date: '2024-11-02'},
+    {id: 50009, customer_id: 1007, product_id: 101, quantity: 1, order_date: '2024-11-08'},
+    {id: 50010, customer_id: 1008, product_id: 104, quantity: 4, order_date: '2024-11-12'}
+  ]
+};
+
+// Sample query data (unchanged from before)
+const queryData = {
+  revenue: {
+    sql: `SELECT 
+  category,
+  COUNT(DISTINCT p.product_id) AS num_products,
+  SUM(o.quantity * p.price) AS total_revenue,
+  AVG(p.price) AS avg_price,
+  ROUND(SUM(o.quantity * p.price) / 
+        NULLIF(SUM(o.quantity), 0), 2) AS avg_order_value
+FROM products p
+JOIN orders o ON p.product_id = o.product_id
+GROUP BY category
+ORDER BY total_revenue DESC`,
+    type: 'SELECT',
+    rows: [
+      { category: 'Electronics', num_products: 24, total_revenue: 89450.00, avg_price: 649.50, avg_order_value: 156.20 },
+      { category: 'Clothing', num_products: 38, total_revenue: 62380.00, avg_price: 45.99, avg_order_value: 78.50 },
+      { category: 'Home & Garden', num_products: 31, total_revenue: 45920.00, avg_price: 89.50, avg_order_value: 125.80 },
+      { category: 'Sports', num_products: 22, total_revenue: 38640.00, avg_price: 72.30, avg_order_value: 95.20 },
+      { category: 'Books', num_products: 15, total_revenue: 12350.00, avg_price: 25.99, avg_order_value: 35.50 }
+    ],
+    chart: { type: 'bar', label: 'Revenue by Category', xKey: 'category', yKey: 'total_revenue' }
+  },
+  'top-customers': {
+    sql: `SELECT 
+  c.customer_id,
+  c.name,
+  c.country,
+  COUNT(o.order_id) AS total_orders,
+  SUM(o.quantity * p.price) AS lifetime_value,
+  MAX(o.order_date) AS last_order_date
+FROM customers c
+LEFT JOIN orders o ON c.customer_id = o.customer_id
+LEFT JOIN products p ON o.product_id = p.product_id
+GROUP BY c.customer_id, c.name, c.country
+ORDER BY lifetime_value DESC
+LIMIT 5`,
+    type: 'SELECT',
+    rows: [
+      { customer_id: 1204, name: 'Sarah Johnson', country: 'USA', total_orders: 12, lifetime_value: 5840.00, last_order_date: '2025-03-15' },
+      { customer_id: 3891, name: 'Michael Chen', country: 'Canada', total_orders: 10, lifetime_value: 4920.50, last_order_date: '2025-03-18' },
+      { customer_id: 2156, name: 'Emma Wilson', country: 'UK', total_orders: 9, lifetime_value: 4350.75, last_order_date: '2025-03-12' },
+      { customer_id: 4021, name: 'David Smith', country: 'USA', total_orders: 8, lifetime_value: 3890.25, last_order_date: '2025-03-20' },
+      { customer_id: 5743, name: 'Lisa Anderson', country: 'Australia', total_orders: 7, lifetime_value: 3265.00, last_order_date: '2025-03-08' }
+    ],
+    chart: { type: 'doughnut', label: 'Top Customers by Value', xKey: 'name', yKey: 'lifetime_value' }
+  },
+  'orders-trend': {
+    sql: `SELECT 
+  DATE_TRUNC('MONTH', o.order_date) AS month,
+  COUNT(DISTINCT o.order_id) AS total_orders,
+  COUNT(DISTINCT o.customer_id) AS unique_customers,
+  ROUND(SUM(o.quantity * p.price), 2) AS total_sales,
+  ROUND(AVG(o.quantity * p.price), 2) AS avg_order_size
+FROM orders o
+JOIN products p ON o.product_id = p.product_id
+WHERE o.order_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+GROUP BY DATE_TRUNC('MONTH', o.order_date)
+ORDER BY month ASC`,
+    type: 'SELECT',
+    rows: [
+      { month: '2024-10', total_orders: 245, unique_customers: 164, total_sales: 38520.00, avg_order_size: 157.24 },
+      { month: '2024-11', total_orders: 312, unique_customers: 198, total_sales: 52840.50, avg_order_size: 169.44 },
+      { month: '2024-12', total_orders: 428, unique_customers: 267, total_sales: 71390.75, avg_order_size: 166.89 },
+      { month: '2025-01', total_orders: 356, unique_customers: 225, total_sales: 58920.25, avg_order_size: 165.51 },
+      { month: '2025-02', total_orders: 298, unique_customers: 189, total_sales: 49580.00, avg_order_size: 166.44 },
+      { month: '2025-03', total_orders: 267, unique_customers: 172, total_sales: 44620.50, avg_order_size: 167.10 }
+    ],
+    chart: { type: 'line', label: 'Monthly Orders', xKey: 'month', yKey: 'total_orders' }
+  },
+  'customer-segment': {
+    sql: `WITH customer_segments AS (
+  SELECT 
+    c.customer_id,
+    c.name,
+    COUNT(o.order_id) AS num_orders,
+    SUM(o.quantity * p.price) AS total_spent,
+    CASE 
+      WHEN COUNT(o.order_id) >= 10 AND SUM(o.quantity * p.price) >= 5000 THEN 'VIP'
+      WHEN COUNT(o.order_id) >= 5 THEN 'Regular'
+      ELSE 'One-time'
+    END AS segment
+  FROM customers c
+  LEFT JOIN orders o ON c.customer_id = o.customer_id
+  LEFT JOIN products p ON o.product_id = p.product_id
+  GROUP BY c.customer_id, c.name
+)
+SELECT 
+  segment,
+  COUNT(*) AS count,
+  ROUND(AVG(total_spent), 2) AS avg_value,
+  ROUND(SUM(total_spent), 2) AS total_revenue
+FROM customer_segments
+GROUP BY segment
+ORDER BY total_revenue DESC`,
+    type: 'SELECT (WITH CTE)',
+    rows: [
+      { segment: 'VIP', count: 42, avg_value: 5840.50, total_revenue: 245341.00 },
+      { segment: 'Regular', count: 156, avg_value: 1820.75, total_revenue: 284037.00 },
+      { segment: 'One-time', count: 802, avg_value: 342.20, total_revenue: 274484.40 }
+    ],
+    chart: { type: 'pie', label: 'Customer Distribution', xKey: 'segment', yKey: 'count' }
+  },
+  'product-performance': {
+    sql: `SELECT 
+  p.product_id,
+  p.name,
+  p.category,
+  COUNT(o.order_id) AS times_ordered,
+  SUM(o.quantity) AS total_qty_sold,
+  ROUND(AVG(o.quantity * p.price), 2) AS avg_transaction,
+  ROUND((SUM(o.quantity) / 
+         (SELECT SUM(quantity) FROM orders)) * 100, 2) AS market_share_pct
+FROM products p
+LEFT JOIN orders o ON p.product_id = o.product_id
+GROUP BY p.product_id, p.name, p.category
+HAVING COUNT(o.order_id) > 0
+ORDER BY total_qty_sold DESC
+LIMIT 8`,
+    type: 'SELECT (Subquery)',
+    rows: [
+      { product_id: 145, name: 'Wireless Headphones', category: 'Electronics', times_ordered: 89, total_qty_sold: 156, avg_transaction: 324.50, market_share_pct: 8.2 },
+      { product_id: 312, name: 'Cotton T-Shirt', category: 'Clothing', times_ordered: 124, total_qty_sold: 284, avg_transaction: 42.80, market_share_pct: 14.9 },
+      { product_id: 289, name: 'Running Shoes', category: 'Sports', times_ordered: 76, total_qty_sold: 98, avg_transaction: 125.50, market_share_pct: 5.1 },
+      { product_id: 421, name: 'Coffee Table', category: 'Home & Garden', times_ordered: 54, total_qty_sold: 67, avg_transaction: 189.20, market_share_pct: 3.5 },
+      { product_id: 198, name: 'SQL Basics Book', category: 'Books', times_ordered: 92, total_qty_sold: 142, avg_transaction: 28.50, market_share_pct: 7.4 },
+      { product_id: 267, name: 'Winter Jacket', category: 'Clothing', times_ordered: 68, total_qty_sold: 134, avg_transaction: 89.75, market_share_pct: 7.0 },
+      { product_id: 501, name: 'Yoga Mat', category: 'Sports', times_ordered: 45, total_qty_sold: 78, avg_transaction: 45.50, market_share_pct: 4.1 },
+      { product_id: 356, name: 'Desk Lamp', category: 'Home & Garden', times_ordered: 38, total_qty_sold: 52, avg_transaction: 68.90, market_share_pct: 2.7 }
+    ],
+    chart: { type: 'bar', label: 'Top Products by Sales Volume', xKey: 'name', yKey: 'total_qty_sold' }
+  },
+  'inventory-alert': {
+    sql: `SELECT 
+  product_id,
+  name,
+  category,
+  price,
+  stock,
+  (SELECT SUM(quantity) FROM orders 
+   WHERE product_id = p.product_id 
+   AND order_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS monthly_demand,
+  CASE 
+    WHEN stock = 0 THEN '🔴 OUT OF STOCK'
+    WHEN stock <= 10 THEN '🟡 CRITICAL'
+    WHEN stock <= 50 THEN '🟠 LOW'
+    ELSE '🟢 OK'
+  END AS status
+FROM products p
+WHERE stock <= 50
+ORDER BY stock ASC`,
+    type: 'SELECT (Correlated Subquery)',
+    rows: [
+      { product_id: 421, name: 'Coffee Table', category: 'Home & Garden', price: 189.20, stock: 0, monthly_demand: 8, status: '🔴 OUT OF STOCK' },
+      { product_id: 198, name: 'SQL Basics Book', category: 'Books', price: 28.50, stock: 3, monthly_demand: 12, status: '🟡 CRITICAL' },
+      { product_id: 501, name: 'Yoga Mat', category: 'Sports', price: 45.50, stock: 8, monthly_demand: 5, status: '🟡 CRITICAL' },
+      { product_id: 356, name: 'Desk Lamp', category: 'Home & Garden', price: 68.90, stock: 15, monthly_demand: 4, status: '🟠 LOW' },
+      { product_id: 412, name: 'Phone Case', category: 'Electronics', price: 15.99, stock: 32, monthly_demand: 18, status: '🟠 LOW' },
+      { product_id: 289, name: 'Running Shoes', category: 'Sports', price: 125.50, stock: 18, monthly_demand: 7, status: '🟠 LOW' }
+    ],
+    chart: { type: 'bar', label: 'Low Stock Products', xKey: 'name', yKey: 'stock' }
+  }
+};
+
+let currentChart = null;
+
+function renderQuery(queryKey) {
+  const query = queryData[queryKey];
+  if (!query) return;
+
+  document.querySelectorAll('.query-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.query === queryKey);
+  });
+
+  document.getElementById('sqlDisplay').textContent = query.sql;
+  document.getElementById('queryType').textContent = query.type;
+  document.getElementById('rowCount').textContent = query.rows.length;
+
+  const table = document.getElementById('resultsTable');
+  const headers = Object.keys(query.rows[0]);
+  table.innerHTML = `
+    <thead>
+      <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+    </thead>
+    <tbody>
+      ${query.rows.map(row => `
+        <tr>${headers.map(h => `<td>${formatCell(row[h])}</td>`).join('')}</tr>
+      `).join('')}
+    </tbody>
+  `;
+
+  renderChart(query.chart, query.rows);
+}
+
+function formatCell(val) {
+  if (typeof val === 'number') {
+    return val.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  }
+  return val;
+}
+
+function renderChart(chartConfig, data) {
+  const ctx = document.getElementById('resultChart').getContext('2d');
+  
+  if (currentChart) currentChart.destroy();
+
+  const labels = data.map(d => d[chartConfig.xKey]);
+  const values = data.map(d => d[chartConfig.yKey]);
+
+  const colors = ['#7aa2ff', '#00d4ff', '#2ecc71', '#f39c12', '#ff6b6b', '#9b59b6', '#1abc9c', '#e74c3c'];
+
+  currentChart = new Chart(ctx, {
+    type: chartConfig.type,
+    data: {
+      labels: labels,
+      datasets: [{
+        label: chartConfig.label,
+        data: values,
+        backgroundColor: chartConfig.type === 'line' ? 'rgba(122, 162, 255, 0.1)' : colors,
+        borderColor: chartConfig.type === 'line' ? '#7aa2ff' : colors,
+        borderWidth: chartConfig.type === 'line' ? 2 : 1,
+        fill: chartConfig.type === 'line',
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#e6eef8', font: { size: 12 } } },
+        tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', titleColor: '#fff', bodyColor: '#fff' }
+      },
+      scales: chartConfig.type === 'line' ? {
+        y: { ticks: { color: '#9fb2c8' }, grid: { color: '#1b2230' }, beginAtZero: true },
+        x: { ticks: { color: '#9fb2c8' }, grid: { color: '#1b2230' } }
+      } : undefined
+    }
+  });
+}
+
+function renderDatabaseView() {
+  // Customers
+  document.getElementById('customersView').innerHTML = fakeDatabase.customers.map(c => `
+    <div class="record-card">
+      <strong>${c.id}</strong> | ${c.name} | ${c.email} | ${c.country} | ${c.signup_date}
+    </div>
+  `).join('');
+
+  // Products
+  document.getElementById('productsView').innerHTML = fakeDatabase.products.map(p => `
+    <div class="record-card">
+      <strong>${p.id}</strong> | ${p.name} | ${p.category} | $${p.price} | Stock: ${p.stock}
+    </div>
+  `).join('');
+
+  // Orders
+  document.getElementById('ordersView').innerHTML = fakeDatabase.orders.map(o => `
+    <div class="record-card">
+      <strong>${o.id}</strong> | Customer: ${o.customer_id} | Product: ${o.product_id} | Qty: ${o.quantity} | ${o.order_date}
+    </div>
+  `).join('');
+}
+
+// Event listeners
+document.querySelectorAll('.query-btn').forEach(btn => {
+  btn.addEventListener('click', () => renderQuery(btn.dataset.query));
+});
+
+document.getElementById('toggleViewBtn').addEventListener('click', () => {
+  document.getElementById('dbModal').classList.add('active');
+  renderDatabaseView();
+});
+
+document.getElementById('closeModal').addEventListener('click', () => {
+  document.getElementById('dbModal').classList.remove('active');
+});
+
+document.getElementById('dbModal').addEventListener('click', (e) => {
+  if (e.target.id === 'dbModal') {
+    document.getElementById('dbModal').classList.remove('active');
+  }
+});
+
+// Initialize
+renderQuery('revenue');
+</script>
+</body>
+</html>

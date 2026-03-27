@@ -55,6 +55,15 @@
     .db-table h3{color:var(--accent);margin-bottom:10px}
     .db-table .records{display:grid;gap:8px}
     .record-card{background:#0f1423;border:1px solid #20273c;border-radius:8px;padding:10px;font-size:12px}
+    /* View toggle styles */
+    .view-toggle{display:flex;gap:8px;margin-bottom:14px}
+    .view-toggle button{flex:1;padding:10px 14px;background:#0f1423;border:1px solid #20273c;color:var(--text);border-radius:10px;cursor:pointer;font-weight:600;transition:.2s}
+    .view-toggle button.active{background:var(--accent);color:#0b0d10;border-color:var(--accent)}
+    .view-toggle button:hover{background:#182035;border-color:#273352}
+    .view-content{display:none}
+    .view-content.active{display:block}
+    .code-display{background:#0c1120;border:1px solid #1b2230;border-radius:12px;padding:16px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.6;color:#2ecc71;white-space:pre-wrap;word-break:break-all;max-height:500px;overflow-y:auto}
+    .code-display.highlight{color:#7aa2ff}
     footer{color:var(--muted);padding:28px 0 60px;text-align:center;border-top:1px solid #1b2230;margin-top:28px}
   </style>
 </head>
@@ -107,50 +116,65 @@
       <!-- Queries List -->
       <div>
         <label style="margin-bottom:12px">Available Queries</label>
-        <button class="query-btn active" data-query="revenue">💰 Revenue by Category</button>
+        <button class="query-btn active" data-query="revenue">🍎 Top Selling Products</button>
         <button class="query-btn" data-query="top-customers">⭐ Top 5 Customers</button>
-        <button class="query-btn" data-query="orders-trend">📈 Orders Trend (Last 6 Months)</button>
+        <button class="query-btn" data-query="orders-trend">📈 Sales Trend (Last 6 Months)</button>
         <button class="query-btn" data-query="customer-segment">🎯 Customer Segments</button>
         <button class="query-btn" data-query="product-performance">🏆 Product Performance</button>
         <button class="query-btn" data-query="inventory-alert">⚠️ Low Stock Alert</button>
       </div>
 
-      <!-- SQL Query Display -->
+      <!-- View Toggle & Code/Results Display -->
       <div>
-        <label>SQL Query</label>
-        <div class="mono" id="sqlDisplay" style="white-space:pre-wrap;word-break:break-all;"></div>
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="results">📊 Results</button>
+          <button class="view-btn" data-view="code">💻 Code</button>
+        </div>
+        
+        <!-- Results View -->
+        <div class="view-content active" id="resultsView">
+          <label>Query Statistics</label>
+          <div class="pill" style="display:block;margin-bottom:8px">Rows: <b id="rowCount">0</b></div>
+          <div class="pill" style="display:block;margin-bottom:8px">Execution: <b>~2ms</b></div>
+          <div class="pill" style="display:block">Type: <b id="queryType">SELECT</b></div>
+        </div>
+
+        <!-- Code View -->
+        <div class="view-content" id="codeView">
+          <label>SQL Query</label>
+          <div class="code-display" id="sqlDisplay"></div>
+        </div>
       </div>
     </div>
   </section>
 
   <section class="card">
     <h2>Results & Visualization</h2>
-    <div class="grid" style="grid-template-columns:1.2fr 1fr">
-      <div>
-        <div id="chartContainer" style="position:relative;height:350px">
-          <canvas id="resultChart"></canvas>
+    <div id="resultsContainer">
+      <div class="grid" style="grid-template-columns:1.2fr 1fr">
+        <div>
+          <div id="chartContainer" style="position:relative;height:350px">
+            <canvas id="resultChart"></canvas>
+          </div>
+        </div>
+        <div>
+          <label>Additional Info</label>
+          <div class="pill" style="display:block;margin-bottom:8px">
+            Total Value: <b id="totalValue">$0</b>
+          </div>
+          <div class="pill" style="display:block">
+            Avg Value: <b id="avgValue">$0</b>
+          </div>
         </div>
       </div>
-      <div>
-        <label>Query Statistics</label>
-        <div class="pill" style="display:block;margin-bottom:8px">
-          Rows: <b id="rowCount">0</b>
-        </div>
-        <div class="pill" style="display:block;margin-bottom:8px">
-          Execution: <b>~2ms</b>
-        </div>
-        <div class="pill" style="display:block">
-          Type: <b id="queryType">SELECT</b>
-        </div>
-      </div>
-    </div>
 
-    <label style="margin-top:16px">Results Table</label>
-    <div class="results">
-      <table id="resultsTable">
-        <thead><tr><th>Loading...</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <label style="margin-top:16px">Results Table</label>
+      <div class="results">
+        <table id="resultsTable">
+          <thead><tr><th>Loading...</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -185,7 +209,7 @@
 <script>
 document.getElementById('year').textContent = new Date().getFullYear();
 
-// Fake database records
+// Fake database records - Organic Farmers Market
 const fakeDatabase = {
   customers: [
     {id: 1001, name: 'Sarah Johnson', email: 'sarah.j@example.com', country: 'USA', signup_date: '2023-01-15'},
@@ -200,54 +224,56 @@ const fakeDatabase = {
     {id: 1010, name: 'Anna Mueller', email: 'amueller@example.com', country: 'Germany', signup_date: '2023-10-08'}
   ],
   products: [
-    {id: 101, name: 'Wireless Headphones', category: 'Electronics', price: 79.99, stock: 45},
-    {id: 102, name: 'USB-C Cable', category: 'Electronics', price: 12.99, stock: 200},
-    {id: 103, name: 'Phone Case', category: 'Electronics', price: 15.99, stock: 32},
-    {id: 104, name: 'Cotton T-Shirt', category: 'Clothing', price: 29.99, stock: 150},
-    {id: 105, name: 'Running Shoes', category: 'Sports', price: 125.50, stock: 18},
-    {id: 106, name: 'Yoga Mat', category: 'Sports', price: 45.50, stock: 8},
-    {id: 107, name: 'Coffee Table', category: 'Home & Garden', price: 189.20, stock: 0},
-    {id: 108, name: 'SQL Basics Book', category: 'Books', price: 28.50, stock: 3},
-    {id: 109, name: 'Desk Lamp', category: 'Home & Garden', price: 68.90, stock: 15},
-    {id: 110, name: 'Winter Jacket', category: 'Clothing', price: 89.75, stock: 42}
+    {id: 101, name: 'Organic Bananas', category: 'Fruits', price: 3.99, stock: 245},
+    {id: 102, name: 'Fresh Strawberries', category: 'Fruits', price: 6.99, stock: 128},
+    {id: 103, name: 'Granny Smith Apples', category: 'Fruits', price: 4.49, stock: 156},
+    {id: 104, name: 'Orange Juice', category: 'Beverages', price: 5.99, stock: 87},
+    {id: 105, name: 'Broccoli', category: 'Vegetables', price: 3.49, stock: 92},
+    {id: 106, name: 'Carrots (Bundle)', category: 'Vegetables', price: 2.99, stock: 134},
+    {id: 107, name: 'Tomatoes', category: 'Vegetables', price: 4.99, stock: 0},
+    {id: 108, name: 'Spinach (Fresh)', category: 'Vegetables', price: 3.99, stock: 45},
+    {id: 109, name: 'Blueberries', category: 'Fruits', price: 7.99, stock: 67},
+    {id: 110, name: 'Whole Milk', category: 'Dairy', price: 4.49, stock: 103}
   ],
   orders: [
-    {id: 50001, customer_id: 1001, product_id: 101, quantity: 1, order_date: '2024-10-05'},
-    {id: 50002, customer_id: 1002, product_id: 104, quantity: 2, order_date: '2024-10-08'},
-    {id: 50003, customer_id: 1003, product_id: 105, quantity: 1, order_date: '2024-10-12'},
-    {id: 50004, customer_id: 1001, product_id: 108, quantity: 3, order_date: '2024-10-15'},
-    {id: 50005, customer_id: 1004, product_id: 102, quantity: 5, order_date: '2024-10-18'},
-    {id: 50006, customer_id: 1005, product_id: 109, quantity: 1, order_date: '2024-10-22'},
-    {id: 50007, customer_id: 1006, product_id: 106, quantity: 2, order_date: '2024-10-25'},
-    {id: 50008, customer_id: 1002, product_id: 110, quantity: 1, order_date: '2024-11-02'},
-    {id: 50009, customer_id: 1007, product_id: 101, quantity: 1, order_date: '2024-11-08'},
-    {id: 50010, customer_id: 1008, product_id: 104, quantity: 4, order_date: '2024-11-12'}
+    {id: 50001, customer_id: 1001, product_id: 101, quantity: 2, order_date: '2024-10-05'},
+    {id: 50002, customer_id: 1002, product_id: 103, quantity: 6, order_date: '2024-10-08'},
+    {id: 50003, customer_id: 1003, product_id: 105, quantity: 3, order_date: '2024-10-12'},
+    {id: 50004, customer_id: 1001, product_id: 109, quantity: 4, order_date: '2024-10-15'},
+    {id: 50005, customer_id: 1004, product_id: 102, quantity: 8, order_date: '2024-10-18'},
+    {id: 50006, customer_id: 1005, product_id: 106, quantity: 5, order_date: '2024-10-22'},
+    {id: 50007, customer_id: 1006, product_id: 101, quantity: 3, order_date: '2024-10-25'},
+    {id: 50008, customer_id: 1002, product_id: 110, quantity: 2, order_date: '2024-11-02'},
+    {id: 50009, customer_id: 1007, product_id: 104, quantity: 4, order_date: '2024-11-08'},
+    {id: 50010, customer_id: 1008, product_id: 103, quantity: 12, order_date: '2024-11-12'}
   ]
 };
 
-// Sample query data (unchanged from before)
+// Sample query data
 const queryData = {
   revenue: {
     sql: `SELECT 
-  category,
-  COUNT(DISTINCT p.product_id) AS num_products,
-  SUM(o.quantity * p.price) AS total_revenue,
-  AVG(p.price) AS avg_price,
-  ROUND(SUM(o.quantity * p.price) / 
-        NULLIF(SUM(o.quantity), 0), 2) AS avg_order_value
+  p.product_id,
+  p.name,
+  p.category,
+  COUNT(o.order_id) AS times_sold,
+  SUM(o.quantity) AS total_units_sold,
+  ROUND(SUM(o.quantity * p.price), 2) AS total_revenue,
+  ROUND(AVG(o.quantity * p.price), 2) AS avg_order_value
 FROM products p
 JOIN orders o ON p.product_id = o.product_id
-GROUP BY category
-ORDER BY total_revenue DESC`,
-    type: 'SELECT',
+GROUP BY p.product_id, p.name, p.category
+ORDER BY total_revenue DESC
+LIMIT 5`,
+    type: 'SELECT with JOINs & Aggregation',
     rows: [
-      { category: 'Electronics', num_products: 24, total_revenue: 89450.00, avg_price: 649.50, avg_order_value: 156.20 },
-      { category: 'Clothing', num_products: 38, total_revenue: 62380.00, avg_price: 45.99, avg_order_value: 78.50 },
-      { category: 'Home & Garden', num_products: 31, total_revenue: 45920.00, avg_price: 89.50, avg_order_value: 125.80 },
-      { category: 'Sports', num_products: 22, total_revenue: 38640.00, avg_price: 72.30, avg_order_value: 95.20 },
-      { category: 'Books', num_products: 15, total_revenue: 12350.00, avg_price: 25.99, avg_order_value: 35.50 }
+      { product_id: 103, name: 'Granny Smith Apples', category: 'Fruits', times_sold: 18, total_units_sold: 85, total_revenue: 381.65, avg_order_value: 21.21 },
+      { product_id: 102, name: 'Fresh Strawberries', category: 'Fruits', times_sold: 14, total_units_sold: 76, total_revenue: 531.24, avg_order_value: 37.95 },
+      { product_id: 109, name: 'Blueberries', category: 'Fruits', times_sold: 22, total_units_sold: 124, total_revenue: 991.76, avg_order_value: 45.08 },
+      { product_id: 101, name: 'Organic Bananas', category: 'Fruits', times_sold: 27, total_units_sold: 156, total_revenue: 622.44, avg_order_value: 23.05 },
+      { product_id: 106, name: 'Carrots (Bundle)', category: 'Vegetables', times_sold: 15, total_units_sold: 89, total_revenue: 266.11, avg_order_value: 17.74 }
     ],
-    chart: { type: 'bar', label: 'Revenue by Category', xKey: 'category', yKey: 'total_revenue' }
+    chart: { type: 'bar', label: 'Top Selling Products', xKey: 'name', yKey: 'total_revenue' }
   },
   'top-customers': {
     sql: `SELECT 
@@ -404,6 +430,17 @@ function renderQuery(queryKey) {
   document.getElementById('queryType').textContent = query.type;
   document.getElementById('rowCount').textContent = query.rows.length;
 
+  // Calculate totals and averages from numeric columns
+  const numericKeys = Object.keys(query.rows[0]).filter(k => typeof query.rows[0][k] === 'number');
+  let totalValue = 0, avgValue = 0;
+  if (numericKeys.length > 0) {
+    const valueKey = numericKeys[numericKeys.length - 1]; // Use last numeric column
+    totalValue = query.rows.reduce((sum, row) => sum + (row[valueKey] || 0), 0);
+    avgValue = totalValue / query.rows.length;
+  }
+  document.getElementById('totalValue').textContent = '$' + totalValue.toFixed(2);
+  document.getElementById('avgValue').textContent = '$' + avgValue.toFixed(2);
+
   const table = document.getElementById('resultsTable');
   const headers = Object.keys(query.rows[0]);
   table.innerHTML = `
@@ -492,6 +529,21 @@ function renderDatabaseView() {
 // Event listeners
 document.querySelectorAll('.query-btn').forEach(btn => {
   btn.addEventListener('click', () => renderQuery(btn.dataset.query));
+});
+
+// View Toggle
+document.querySelectorAll('.view-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const viewName = btn.dataset.view;
+    
+    // Update button states
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    // Toggle views
+    document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewName + 'View').classList.add('active');
+  });
 });
 
 document.getElementById('toggleViewBtn').addEventListener('click', () => {

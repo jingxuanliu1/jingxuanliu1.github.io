@@ -45,6 +45,11 @@
     @media (min-width:800px){ .grid-3{ grid-template-columns:repeat(3,1fr); } .grid-2{ grid-template-columns:repeat(2,1fr);} }
     .card { background:var(--card); border:1px solid #1b2230; border-radius:16px; padding:16px; box-shadow: 0 6px 20px rgba(0,0,0,.15); }
     .card h3 { margin:0 0 8px; }
+    .featured-card { display:grid; gap:18px; align-items:center; margin:16px 0; }
+    .featured-card img { border:1px solid #1b2230; background:#0b0d10; }
+    .project-links { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; }
+    .project-links a { font-weight:700; }
+    @media (min-width:800px){ .featured-card{ grid-template-columns:1.05fr .95fr; } }
     section { padding:28px 0; }
     footer { color:var(--muted); padding:28px 0 60px; text-align:center; border-top:1px solid #1b2230; margin-top:28px; }
     .tag { display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px; background:#0b0d10; border:1px solid #1b2230; color:var(--muted); margin-right:6px; }
@@ -191,6 +196,28 @@
       <section id="projects">
         <h2>Projects</h2>
 
+        <!-- ===== PERCLOS Driver Fatigue Detection ===== -->
+        <article class="card featured-card">
+          <div>
+            <h3>Real-Time PERCLOS Driver Fatigue Detection</h3>
+            <p class="muted">
+              Research prototype for driver fatigue monitoring using video/webcam eye-state detection,
+              dlib 81-point facial landmarks, a MobileNetV3 transfer-learning classifier, and sliding-window
+              PERCLOS visualization.
+            </p>
+            <div>
+              <span class="tag">Python</span><span class="tag">TensorFlow/Keras</span>
+              <span class="tag">OpenCV</span><span class="tag">dlib</span>
+              <span class="tag">Computer Vision</span>
+            </div>
+            <div class="project-links">
+              <a href="https://github.com/jingxuanliu1/perclos-fatigue-detection" target="_blank" rel="noopener">View Code</a>
+              <a href="resume.pdf" target="_blank" rel="noopener">Updated Resume</a>
+            </div>
+          </div>
+          <img src="/assets/perclos-demo.png" alt="PERCLOS driver fatigue detection demo with eye predictions and trend graph" />
+        </article>
+
         <!-- ===== YouTube Clickability Study ===== -->
         <article class="card">
           <h3>YouTube Clickability Study</h3>
@@ -214,7 +241,7 @@
         <template id="clickability-embed">
           <div class="card" style="padding:0; overflow:hidden; margin-top:16px;">
             <iframe
-              src="https://your-embed-hosting.example/"  <!-- replace with your mirrored URL when you control headers -->
+              src="https://your-embed-hosting.example/"
               style="width:100%; height:720px; border:0;"
               loading="lazy" referrerpolicy="no-referrer"
               title="YouTube Clickability Study (Embedded)">

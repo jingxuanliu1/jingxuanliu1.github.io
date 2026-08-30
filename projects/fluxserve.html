@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FluxServe Technical Case Study | Jingxuan Liu</title>
+  <meta name="description" content="FluxServe case study: a deadline-aware model-serving gateway with bounded queues, dynamic batching, cancellation, caching, fallback, tests, and reproducible CPU benchmarks.">
+  <meta name="theme-color" content="#07111f">
+  <link rel="canonical" href="https://jingxuanliu1.github.io/projects/fluxserve.html">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://jingxuanliu1.github.io/projects/fluxserve.html">
+  <meta property="og:title" content="FluxServe Technical Case Study | Jingxuan Liu">
+  <meta property="og:description" content="How bounded dynamic batching raised throughput from 1,873 to 4,688 requests/second in a reproducible NumPy CPU benchmark.">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header"><div class="nav-shell"><a class="brand" href="/" aria-label="JL — Jingxuan Liu, home">JL</a><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav"><span class="sr-only">Toggle navigation</span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button><nav id="primary-nav" class="primary-nav" aria-label="Primary navigation"><a href="/#work">Work</a><a href="/#journey">Journey</a><a href="/#experience">Experience</a><a href="/#about">About</a><a href="/resume.pdf" target="_blank" rel="noopener">Résumé</a><a href="https://github.com/jingxuanliu1" target="_blank" rel="noopener">GitHub</a><a href="https://www.linkedin.com/in/jing-xuan-liu/" target="_blank" rel="noopener">LinkedIn</a></nav></div></header>
+
+  <main id="main-content">
+    <header class="case-hero">
+      <div class="section-shell">
+        <p class="breadcrumb"><a href="/">Home</a> / <a href="/projects.html">Projects</a> / FluxServe</p>
+        <div class="case-hero-grid">
+          <div><p class="case-eyebrow">AI infrastructure · August 2026</p><h1>Flux<span>Serve</span></h1><p class="case-summary">A small, inspectable inference gateway built to test a systems question: can bounded dynamic batching improve throughput and tail latency without hiding cancellation, overload, or fallback behavior?</p><div class="case-actions"><a class="button button-primary" href="#results">See the results</a><a class="button button-secondary" href="/resume.pdf" target="_blank" rel="noopener">View résumé</a></div></div>
+          <dl class="case-facts"><div><dt>Role</dt><dd>Independent systems implementation</dd></div><div><dt>Core</dt><dd>Python, NumPy, asyncio</dd></div><div><dt>Tests</dt><dd>11 unit, integration, load-smoke, and API end-to-end</dd></div><div><dt>Evidence</dt><dd>Saved JSON benchmark and documented reproduction command</dd></div><div><dt>Source</dt><dd>Private; no source code published here</dd></div></dl>
+        </div>
+      </div>
+    </header>
+
+    <div class="section-shell case-layout">
+      <nav class="case-toc" aria-label="Case study contents"><p>Case study</p><ol><li><a href="#problem">01 · Problem</a></li><li><a href="#scope">02 · Scope</a></li><li><a href="#contribution">03 · Contribution</a></li><li><a href="#architecture">04 · Architecture</a></li><li><a href="#decisions">05 · Decisions</a></li><li><a href="#challenges">06 · Challenges</a></li><li><a href="#testing">07 · Testing</a></li><li><a href="#results">08 · Results</a></li><li><a href="#limitations">09 · Limitations</a></li><li><a href="#learning">10 · Learning</a></li><li><a href="#evidence">11 · Evidence</a></li></ol></nav>
+
+      <article class="case-body">
+        <section id="problem" class="case-section">
+          <p class="section-label">01 / Problem and motivation</p><h2>Per-request inference leaves useful capacity on the table.</h2>
+          <p>With small CPU inference work, scheduling overhead becomes visible. Executing every request independently can underuse vectorized computation, while waiting too long to build a batch can make latency worse. The gateway also has to remain predictable when callers time out, queues fill, or a preferred backend is unavailable.</p>
+          <p class="case-callout"><strong>Engineering question:</strong> how much can a transparent, bounded scheduler improve the same workload—and can the claim be reproduced with the machine, seed, request count, concurrency, and error count recorded?</p>
+        </section>
+
+        <section id="scope" class="case-section">
+          <p class="section-label">02 / Project scope</p><h2>A focused request path, not a production serving platform.</h2>
+          <p>FluxServe implements a local HTTP and Python-callable inference gateway around a deterministic 128-to-1 linear projection. The scope is deliberately narrow enough to inspect the scheduler and measure its behavior.</p>
+          <ul><li>Versioned model registry and typed backend contract.</li><li>Python reference, NumPy FP32, NumPy FP16, and symmetric NumPy INT8 backends.</li><li>Optional ONNX Runtime and PyTorch adapters that report unavailable rather than pretending to execute.</li><li>Configurable queue capacity, batch size, wait budget, worker count, deadline, cache TTL, and cache capacity.</li><li>Health, readiness, registry, inference, cancellation, and Prometheus-format metrics endpoints.</li></ul>
+        </section>
+
+        <section id="contribution" class="case-section">
+          <p class="section-label">03 / My contribution</p><h2>I built the scheduler and the evidence around it.</h2>
+          <p>I implemented the admission path, deadline-prioritized queue, dynamic batch scheduler, cache-key rules, backend resolution, cancellation paths, latency instrumentation, HTTP surface, tests, and benchmark harness. I also documented failure modes and separated executed backends from optional adapters.</p>
+          <p>This was not an integration of Triton or vLLM. The scheduler is intentionally implemented directly with an <code>asyncio</code> condition and explicit queue so its ordering, wait budget, backpressure, and completion semantics remain inspectable.</p>
+        </section>
+
+        <section id="architecture" class="case-section">
+          <p class="section-label">04 / Architecture</p><h2>The request path keeps policy explicit.</h2>
+          <figure class="architecture-large">
+            <svg viewBox="0 0 900 510" role="img" aria-labelledby="flux-arch-title flux-arch-desc">
+              <title id="flux-arch-title">FluxServe architecture</title><desc id="flux-arch-desc">Clients send validated requests to a bounded deadline-aware queue, a dynamic scheduler groups matching work, a versioned registry resolves a ready backend, and responses record separate queue, inference, and total metrics. Caching and cancellation connect to the admission path.</desc>
+              <defs><marker id="flux-case-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#55d5cf"/></marker></defs>
+              <path class="signal-grid-line" d="M20 90H880M20 250H880M20 410H880M180 25V485M450 25V485M720 25V485"/>
+              <path class="diagram-path" d="M180 165H242M398 165H460M616 165H678" marker-end="url(#flux-case-arrow)"/>
+              <rect class="diagram-node" x="28" y="112" width="152" height="106" rx="12"/><text class="diagram-title" x="104" y="154" text-anchor="middle">HTTP / local client</text><text class="diagram-note" x="104" y="180" text-anchor="middle">validate + rate limit</text>
+              <rect class="diagram-node diagram-node-cyan" x="242" y="112" width="156" height="106" rx="12"/><text class="diagram-title" x="320" y="148" text-anchor="middle">Admission queue</text><text class="diagram-note" x="320" y="173" text-anchor="middle">bounded + deadline first</text><text class="diagram-note" x="320" y="194" text-anchor="middle">overload / expiry</text>
+              <rect class="diagram-node" x="460" y="112" width="156" height="106" rx="12"/><text class="diagram-title" x="538" y="148" text-anchor="middle">Batch scheduler</text><text class="diagram-note" x="538" y="173" text-anchor="middle">compatible model key</text><text class="diagram-note" x="538" y="194" text-anchor="middle">max batch + wait</text>
+              <rect class="diagram-node" x="678" y="112" width="194" height="106" rx="12"/><text class="diagram-title" x="775" y="148" text-anchor="middle">Versioned registry</text><text class="diagram-note" x="775" y="173" text-anchor="middle">preferred → ready fallback</text><text class="diagram-note" x="775" y="194" text-anchor="middle">Python / FP32 / FP16 / INT8</text>
+              <path class="diagram-support" d="M320 218V295H190M320 295H450M775 218V295H663M775 295H830"/>
+              <rect class="diagram-node small" x="84" y="295" width="212" height="74" rx="10"/><text class="diagram-title" x="190" y="325" text-anchor="middle">Safe result cache</text><text class="diagram-note" x="190" y="348" text-anchor="middle">model + version + backend + input</text>
+              <rect class="diagram-node small" x="332" y="295" width="236" height="74" rx="10"/><text class="diagram-title" x="450" y="325" text-anchor="middle">Cancellation + timeout</text><text class="diagram-note" x="450" y="348" text-anchor="middle">skip completed or abandoned futures</text>
+              <rect class="diagram-node small" x="568" y="295" width="212" height="74" rx="10"/><text class="diagram-title" x="674" y="325" text-anchor="middle">Threaded backend call</text><text class="diagram-note" x="674" y="348" text-anchor="middle">event loop stays responsive</text>
+              <rect class="diagram-node small" x="690" y="403" width="182" height="68" rx="10"/><text class="diagram-title" x="781" y="432" text-anchor="middle">Metrics</text><text class="diagram-note" x="781" y="454" text-anchor="middle">queue / inference / total</text>
+              <path class="diagram-support" d="M674 369V437H690"/>
+            </svg>
+            <figcaption>Policy stays in the gateway: bounded admission, a visible batching algorithm, explicit backend readiness, and separate latency components.</figcaption>
+          </figure>
+        </section>
+
+        <section id="decisions" class="case-section">
+          <p class="section-label">05 / Important engineering decisions</p><h2>Dependability comes from constraints.</h2>
+          <div class="decision-list">
+            <article><h3>Deadline before arrival order</h3><p>Requests sort by absolute deadline and then sequence. A batch never waits beyond the earliest selected request’s remaining slack.</p></article>
+            <article><h3>Bound every queue and wait</h3><p>Admission rejects a full queue, queued work can expire, and batch formation respects both maximum size and maximum wait. Work cannot grow without an explicit limit.</p></article>
+            <article><h3>Make cache identity complete</h3><p>The opt-in TTL/LRU cache hashes model, version, backend preference, and full finite input, preventing cross-version reuse.</p></article>
+            <article><h3>Fallback only to a backend that reports ready</h3><p>Optional ONNX and PyTorch adapters expose why they are unavailable. A request may follow an explicit fallback order without mislabeling NumPy work as another backend.</p></article>
+            <article><h3>Move synchronous compute off the event loop</h3><p>Backend computation runs in a worker thread so admission, timeout, and cancellation handling can continue.</p></article>
+          </div>
+        </section>
+
+        <section id="challenges" class="case-section">
+          <p class="section-label">06 / Technical challenges</p><h2>A fast result is not enough if completion semantics are wrong.</h2>
+          <ul><li><strong>Cancellation races:</strong> a caller may abandon work while it is queued or while a batch is executing. Workers check whether futures are already completed or cancelled before publishing results.</li><li><strong>Mixed backend/model work:</strong> only requests with matching model, version, and backend resolution keys may share a batch.</li><li><strong>Backend failure isolation:</strong> an exception fails the affected batch and increments failure metrics instead of corrupting unrelated requests.</li><li><strong>Measurement resolution:</strong> the harness moved to <code>perf_counter_ns</code> after monotonic clock quantization was detected.</li></ul>
+        </section>
+
+        <section id="testing" class="case-section">
+          <p class="section-label">07 / Testing and evaluation</p><h2>Correctness paths were tested before performance was summarized.</h2>
+          <table class="test-table"><thead><tr><th>Behavior</th><th>Expected result</th><th>Evidence</th></tr></thead><tbody><tr><td>Queue full</td><td>Reject with overload; HTTP 429</td><td>Slow-backend overload test</td></tr><tr><td>Deadline expiry</td><td>Cancel caller or expire queued item; HTTP 504</td><td>Five-millisecond deadline test</td></tr><tr><td>Caller cancellation</td><td>Worker skips queued cancelled future</td><td>Queued-cancellation test</td></tr><tr><td>Unavailable preferred backend</td><td>Resolve an explicitly ready fallback</td><td>ONNX-to-NumPy fallback test</td></tr><tr><td>Invalid vector</td><td>Reject wrong-length or non-finite input</td><td>API invalid-payload test</td></tr><tr><td>Precision variants</td><td>Meet documented error tolerances against Python reference</td><td>200 saved correctness checks</td></tr></tbody></table>
+          <p>The full suite contains 11 unit, integration, load-smoke, and API end-to-end tests. The performance comparison warms each scenario with 32 requests and records the machine, OS, Python, NumPy, seed, workload, latency percentiles, completed count, and errors.</p>
+        </section>
+
+        <section id="results" class="case-section">
+          <p class="section-label">08 / Results</p><h2>Batching was the strongest verified systems result.</h2>
+          <div class="result-panel"><div><strong>4,687.9</strong><span>requests/second with dynamic batching</span></div><div><strong>+150.3%</strong><span>throughput versus the same unbatched FP32 workload</span></div><div><strong>−64.7%</strong><span>p95 latency, from 18.08 ms to 6.39 ms</span></div></div>
+          <div class="comparison-chart"><div class="bar-chart"><div><span>Unbatched</span><i style="--bar:40%"></i><strong>1,873</strong></div><div><span>Batch 16</span><i style="--bar:100%"></i><strong>4,688</strong></div><small>Concurrency 32 · 1,200 requests · max batch 16 · 2 ms max wait · zero errors in both runs</small></div></div>
+          <p class="case-callout gold"><strong>Qualification:</strong> this is a reproducible NumPy CPU benchmark using a compact deterministic linear projection. It is not production traffic, a large neural model, a GPU result, or evidence of internet-scale operation.</p>
+        </section>
+
+        <section id="limitations" class="case-section">
+          <p class="section-label">09 / Limitations</p><h2>The boundary of the claim matters as much as the number.</h2>
+          <ul><li>The verified model is a compact deterministic linear projection selected to expose scheduler behavior, not a deep neural network.</li><li>ONNX Runtime and PyTorch adapters exist but were not installed in the approved environment.</li><li>No CUDA, TensorRT, GPU, Kubernetes, distributed coordination, external traffic, uptime, or production scale was tested.</li><li>Docker files exist, but the local Docker daemon was unavailable for runtime verification.</li><li>The reference HTTP server still needs authentication, TLS, tenant isolation, durable control-plane state, per-model quotas, and circuit breakers before internet exposure.</li></ul>
+        </section>
+
+        <section id="learning" class="case-section">
+          <p class="section-label">10 / What I learned</p><h2>Performance engineering is an exercise in precise comparison.</h2>
+          <p>The most useful optimization was not a new backend; it was making the scheduler’s work visible and comparing one controlled variable at a time. I also learned that cancellation, overload, and cache identity are part of the serving result—not secondary polish.</p>
+          <p>The next meaningful step is not a larger headline number. It is running the same discipline against a real model backend and production-shaped traffic while adding authentication, tenancy, durable registry state, and distributed admission.</p>
+        </section>
+
+        <section id="evidence" class="case-section">
+          <p class="section-label">11 / Case-study evidence</p><h2>What can be inspected here—and what stays private.</h2>
+          <p>This page is grounded in the implementation, 11-test suite, saved machine-readable benchmark, architecture notes, design decisions, failure-mode table, and claim-verification report. The source repository is currently private, so no repository button is shown and no private code is embedded.</p>
+          <div class="evidence-links"><a class="button button-primary" href="/projects.html">Back to project archive</a><a class="button button-secondary" href="mailto:jingxuanliu317@gmail.com?subject=FluxServe%20case%20study">Discuss FluxServe</a></div>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <nav class="project-neighbors" aria-label="More projects"><div class="section-shell"><a href="/projects.html">← All projects</a><a href="/projects/tracelab.html">Next: TraceLab AI →</a></div></nav>
+  <footer class="site-footer"><div class="section-shell"><p>Designed and built by Jingxuan Liu. <span>© <span id="year">2026</span></span></p></div></footer>
+  <script src="/script.js" defer></script>
+</body>
+</html>

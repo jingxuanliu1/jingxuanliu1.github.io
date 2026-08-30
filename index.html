@@ -1,653 +1,361 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Jingxuan Liu — Portfolio</title>
-  <meta name="description" content="Personal website and portfolio of Jingxuan Liu." />
-
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-  <style>
-    /* Ensure header sits above hero scene/image */
-    header { z-index: 200; }
-    .ml-menu-panel { z-index: 1000; }
-    .scene { position: relative; z-index: 0; }
-
-    :root { --bg:#0b0d10; --card:#12161b; --text:#e6eef8; --muted:#9fb2c8; --accent:#7aa2ff; }
-    * { box-sizing: border-box; }
-
-    /* Font + rendering fixes */
-    html {
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      text-rendering: optimizeLegibility;
-      font-synthesis-weight: none; /* don’t fake bold */
-    }
-    h1, h2, h3 { font-weight: 800; }
-    strong, b  { font-weight: 700; }
-
-    body { margin:0; color:var(--text); background:linear-gradient(120deg,#0b0d10,#0f1320 60%); }
-    a { color:var(--accent); text-decoration:none; }
-    a:hover { text-decoration:underline; }
-    .wrap { max-width:1000px; margin:0 auto; padding:24px; position:relative; z-index:1; }
-    header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0 8px; position:sticky; top:0; background:rgba(11,13,16,0.75); backdrop-filter: blur(8px); border-bottom:1px solid #1b2230; }
-    nav a { margin:0 10px; font-weight:600; }
-    .hero { padding:56px 0 24px; display:grid; grid-template-columns:1.2fr 1fr; gap:28px; align-items:center; }
-    .hero h1 { margin:0 0 12px; font-size:44px; line-height:1.1; }
-    .hero p { color:var(--muted); margin:0 0 20px; font-size:18px; }
-    .btn { display:inline-block; padding:10px 16px; border-radius:10px; background:var(--accent); color:#0b0d10; font-weight:700; border:none; cursor:pointer; }
-    .grid { display:grid; gap:16px; }
-    @media (min-width:800px){ .grid-3{ grid-template-columns:repeat(3,1fr); } .grid-2{ grid-template-columns:repeat(2,1fr);} }
-    .card { background:var(--card); border:1px solid #1b2230; border-radius:16px; padding:16px; box-shadow: 0 6px 20px rgba(0,0,0,.15); }
-    .card h3 { margin:0 0 8px; }
-    .featured-card { display:grid; gap:18px; align-items:center; margin:16px 0; }
-    .featured-card img { border:1px solid #1b2230; background:#0b0d10; }
-    .project-links { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; }
-    .project-links a { font-weight:700; }
-    @media (min-width:800px){ .featured-card{ grid-template-columns:1.05fr .95fr; } }
-    section { padding:28px 0; }
-    footer { color:var(--muted); padding:28px 0 60px; text-align:center; border-top:1px solid #1b2230; margin-top:28px; }
-    .tag { display:inline-block; font-size:12px; padding:4px 8px; border-radius:999px; background:#0b0d10; border:1px solid #1b2230; color:var(--muted); margin-right:6px; }
-    .muted { color:var(--muted); }
-    img { width:100%; border-radius:12px; display:block; }
-
-    /* Background starfield canvas */
-    #stars{position:fixed; inset:0; z-index:0; pointer-events:none;}
-    .wrap{position:relative; z-index:1;}
-
-    /* Chat widget styles */
-    .chat-toggle{position:fixed; right:18px; bottom:18px; z-index:3; border:none; background:var(--accent); color:#0b0d10; font-weight:800; padding:12px 14px; border-radius:999px; box-shadow:0 10px 24px rgba(0,0,0,.35); cursor:pointer;}
-    .chatbox{position:fixed; right:18px; bottom:76px; z-index:3; width:min(360px, calc(100vw - 36px)); background:var(--card); border:1px solid #1b2230; border-radius:16px; box-shadow:0 16px 40px rgba(0,0,0,.45); padding:14px;}
-    .chatbox-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
-    .chatbox-header button{background:transparent; border:1px solid #1b2230; color:var(--muted); border-radius:8px; padding:4px 8px; cursor:pointer;}
-    #chat-form label{display:block; margin:8px 0;}
-    #chat-form span{display:block; font-size:12px; color:var(--muted); margin-bottom:6px;}
-    #chat-form input, #chat-form textarea{width:100%; padding:10px; border-radius:10px; border:1px solid #1b2230; background:#0b0d10; color:#e6eef8;}  
-    .chat-actions{display:flex; align-items:center; gap:10px;}
-    .chat-actions .hint{color:var(--muted);} 
-    /* Toast */
-    .toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#0b0d10; border:1px solid #1b2230; color:#e6eef8; padding:10px 14px; border-radius:12px; box-shadow:0 10px 24px rgba(0,0,0,.35); z-index:4;}
-
-    /* ====== Scene (light-on + walking silhouette) ====== */
-    .scene{ position:relative; overflow:hidden; }
-    .scene img{ display:block; width:100%; border-radius:12px; filter:brightness(.65) contrast(1.02); transition:filter 900ms ease; }
-
-    /* “Light turns on” overlay */
-    .scene .light{
-      position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity 900ms ease;
-      background:
-        radial-gradient(120% 120% at 60% 35%,
-          rgba(255,255,220,.35) 0%,
-          rgba(255,255,220,.15) 35%,
-          rgba(0,0,0,.05) 60%,
-          rgba(0,0,0,.25) 100%);
-      mix-blend-mode:screen;
-      border-radius:12px;
-    }
-
-    /* Walking silhouette */
-    .walker{
-      position:absolute; bottom:6%; left:-28%;
-      width:20%; opacity:0;
-      filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));
-      transform:translateX(0) translateY(0) scaleX(1);
-    }
-    .walker circle,.walker path{ fill:#0b0d10; }
-    @media (prefers-color-scheme: dark){
-      .walker circle,.walker path{ fill:#e6eef8; opacity:.9; }
-    }
-
-    /* Activated state */
-    .scene-on img{ filter:brightness(1.05) contrast(1.05); }
-    .scene-on .light{ opacity:1; }
-    .scene-on .walker{
-      opacity:1;
-      animation:
-        walker-x 5.2s ease-in-out forwards,
-        walker-bob 750ms ease-in-out infinite;
-    }
-
-    /* Horizontal travel */
-    @keyframes walker-x{
-      0%   { transform:translateX(0) translateY(0) scaleX(1); }
-      50%  { transform:translateX(80vw) translateY(0) scaleX(1); }
-      55%  { transform:translateX(80vw) translateY(0) scaleX(-1); }
-      100% { transform:translateX(15vw) translateY(0) scaleX(-1); }
-    }
-
-    /* Subtle bob */
-    @keyframes walker-bob{
-      0%,100% { transform:translateX(var(--walker-x,0)) translateY(0) scaleX(var(--walker-flip,1)); }
-      50%     { transform:translateX(var(--walker-x,0)) translateY(-2px) scaleX(var(--walker-flip,1)); }
-    }
-
-    /* Respect reduced motion */
-    @media (prefers-reduced-motion: reduce){
-      .scene-on .walker{ animation:none; }
-      .scene img{ transition:none; }
-      .scene .light{ transition:none; }
-    }
-
-    /* ===== ML dropdown (new) ===== */
-    .ml-menu{ position:relative; display:inline-block; margin-left:6px; }
-    .ml-btn{ font-weight:700; padding:8px 10px; border-radius:8px; background:#182035; border:1px solid #273352; color:#c7d6f3; cursor:pointer; }
-    .ml-menu-panel{
-      position:absolute; right:0; top:110%;
-      background:#12161b; border:1px solid #1b2230; border-radius:10px;
-      padding:8px; min-width:240px; display:none;
-      box-shadow:0 10px 28px rgba(0,0,0,.35); z-index:10;
-    }
-    .ml-item{ display:block; padding:8px 10px; color:#e6eef8; border-radius:8px; }
-    .ml-item:hover{ background:#0f1423; text-decoration:none; }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jingxuan Liu | Reliable AI Systems Engineer</title>
+  <meta name="description" content="Jingxuan Liu is a Georgia Tech BS/MS computer science student engineering reliable AI infrastructure, backend systems, agent evaluation, cybersecurity, and trustworthy machine learning.">
+  <meta name="theme-color" content="#07111f">
+  <link rel="canonical" href="https://jingxuanliu1.github.io/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://jingxuanliu1.github.io/">
+  <meta property="og:title" content="Jingxuan Liu | Reliable AI Systems Engineer">
+  <meta property="og:description" content="Signals, traces, and dependable systems—from model serving to deterministic agent evaluation and applied computer vision.">
+  <meta property="og:image" content="https://jingxuanliu1.github.io/assets/og.png">
+  <meta property="og:image:alt" content="Jingxuan Liu — Software Engineer Building Reliable AI Systems">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Jingxuan Liu | Reliable AI Systems Engineer">
+  <meta name="twitter:description" content="Signals, traces, and dependable systems—from model serving to deterministic agent evaluation and applied computer vision.">
+  <meta name="twitter:image" content="https://jingxuanliu1.github.io/assets/og.png">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script>document.documentElement.classList.add('js');</script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Jingxuan Liu",
+    "url": "https://jingxuanliu1.github.io/",
+    "email": "mailto:jingxuanliu317@gmail.com",
+    "sameAs": [
+      "https://github.com/jingxuanliu1",
+      "https://www.linkedin.com/in/jing-xuan-liu/"
+    ],
+    "affiliation": {
+      "@type": "CollegeOrUniversity",
+      "name": "Georgia Institute of Technology"
+    },
+    "knowsAbout": ["AI systems", "model serving", "agent evaluation", "backend systems", "computer vision", "cybersecurity"]
+  }
+  </script>
 </head>
 <body>
-  <!-- Animated starfield background -->
-  <canvas id="stars" aria-hidden="true"></canvas>
+  <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <div class="wrap">
-    <header>
-      <div><a href="https://www.linkedin.com/in/jing-xuan-liu/" target="_blank" rel="noopener"><strong>Jingxuan Liu</strong></a></div>
-      <nav>
-        <a href="#projects">Projects</a>
-        <a href="mailto:jingxuanliu317@gmail.com" aria-label="Email Jingxuan Liu">jingxuanliu317@gmail.com</a>
-        <a href="/tasks.html" aria-label="Task dashboard">Tasks</a>
-        <!-- ===== ML DROPDOWN ===== -->
-        <div class="ml-menu">
-          <button id="ml-btn" class="ml-btn" type="button" aria-haspopup="true" aria-expanded="false">ML ▾</button>
-          <div id="ml-menu" class="ml-menu-panel" role="menu" aria-label="Machine Learning pages">
-            <a href="/ml-viz.html" class="ml-item" role="menuitem">Clustering — K-Means / GMM / DBSCAN</a>
-            <a href="/ml-nn.html"  class="ml-item" role="menuitem">Neural Network — Regression + “Lottery”</a>
-          </div>
-        </div>
+  <header class="site-header">
+    <div class="nav-shell">
+      <a class="brand" href="#top" aria-label="JL — Jingxuan Liu, home">JL</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav">
+        <span class="sr-only">Toggle navigation</span>
+        <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+      </button>
+      <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
+        <a href="#work">Work</a>
+        <a href="#journey">Journey</a>
+        <a href="#experience">Experience</a>
+        <a href="#about">About</a>
+        <a href="/resume.pdf" target="_blank" rel="noopener">Résumé</a>
+        <a href="https://github.com/jingxuanliu1" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.linkedin.com/in/jing-xuan-liu/" target="_blank" rel="noopener">LinkedIn</a>
       </nav>
-    </header>
-
-    <main>
-      <section class="hero">
-        <div>
-          <h1>Hi, I’m Jingxuan Liu 👋</h1>
-          <p>CS @ Georgia Tech • Interests: ML, Web, Systems. I build useful things with Java, Python, and C.</p>
-          <p>
-            <a class="btn" href="resume.pdf" download target="_blank" rel="noopener">Download Resume</a>
-            &nbsp;&nbsp;<a href="https://github.com/jingxuanliu1">GitHub</a> ·
-            <a href="https://www.linkedin.com/in/jing-xuan-liu/" target="_blank" rel="noopener" aria-label="Jingxuan Liu on LinkedIn">LinkedIn</a> ·
-            <a href="mailto:jingxuanliu317@gmail.com">Email</a>
-          </p>
-        </div>
-
-        <!-- Hero preview with "light on" + walking silhouette -->
-        <div class="card scene" id="hero-scene" aria-label="Preview scene with light turning on and a passerby silhouette">
-          <img alt="Preview" src="https://picsum.photos/800/500" />
-          <div class="light" aria-hidden="true"></div>
-          <svg class="walker" viewBox="0 0 64 64" aria-hidden="true">
-            <circle cx="33" cy="14" r="6" />
-            <path d="M31 20 l-3 12 7 8 5 12 6-2 -4-13 4-7 3-7 -4-5 -6 3z" />
-            <path d="M23 38 l8 4 4 10 -6 2 -9-10z" />
-          </svg>
-        </div>
-      </section>
-
-      <section id="projects">
-        <h2>Projects</h2>
-
-        <!-- ===== PERCLOS Driver Fatigue Detection ===== -->
-        <article class="card featured-card">
-          <div>
-            <h3>Real-Time PERCLOS Driver Fatigue Detection</h3>
-            <p class="muted">
-              Research prototype for driver fatigue monitoring using video/webcam eye-state detection,
-              dlib 81-point facial landmarks, a MobileNetV3 transfer-learning classifier, and sliding-window
-              PERCLOS visualization.
-            </p>
-            <div>
-              <span class="tag">Python</span><span class="tag">TensorFlow/Keras</span>
-              <span class="tag">OpenCV</span><span class="tag">dlib</span>
-              <span class="tag">Computer Vision</span>
-            </div>
-            <div class="project-links">
-              <a href="https://github.com/jingxuanliu1/perclos-fatigue-detection" target="_blank" rel="noopener">View Code</a>
-              <a href="resume.pdf" target="_blank" rel="noopener">Updated Resume</a>
-            </div>
-          </div>
-          <img src="/assets/perclos-demo.png" alt="PERCLOS driver fatigue detection demo with eye predictions and trend graph" />
-        </article>
-
-        <!-- ===== YouTube Clickability Study ===== -->
-        <article class="card">
-          <h3>YouTube Clickability Study</h3>
-          <p class="muted">Interactive analysis of title/thumbnail “clickability” for YouTube videos (views-per-subscriber, clustering, feature importance).</p>
-          <div>
-            <span class="tag">Python</span><span class="tag">Pandas</span>
-            <span class="tag">ML</span><span class="tag">Visualization</span>
-          </div>
-          <!-- Optional: add a local preview image and link out -->
-          <!--
-          <a href="https://github.gatech.edu/pages/sjin308/YouTube_Clickability_Study" target="_blank" rel="noopener">
-            <img src="/assets/clickability-preview.jpg" alt="Preview of YouTube Clickability Study" />
-          </a>
-          -->
-          <p style="margin-top:10px;">
-            <a href="https://github.gatech.edu/pages/sjin308/YouTube_Clickability_Study" target="_blank" rel="noopener">Open Live Report ↗</a>
-          </p>
-        </article>
-
-        <!-- Safe placeholder for a future embed (no nested comments) -->
-        <template id="clickability-embed">
-          <div class="card" style="padding:0; overflow:hidden; margin-top:16px;">
-            <iframe
-              src="https://your-embed-hosting.example/"
-              style="width:100%; height:720px; border:0;"
-              loading="lazy" referrerpolicy="no-referrer"
-              title="YouTube Clickability Study (Embedded)">
-            </iframe>
-          </div>
-        </template>
-
-        <div class="grid grid-3" style="margin-top:16px;">
-          <article class="card">
-            <h3>Time Map — Task & Time Manager</h3>
-            <p class="muted">Full-stack mobile website using Django/Python with user auth and MySQL.</p>
-            <div>
-              <span class="tag">Django</span><span class="tag">Python</span><span class="tag">MySQL</span>
-            </div>
-            <p><a href="https://github.com/jingxuanliu1">Code</a></p>
-          </article>
-
-          <article class="card">
-            <h3>Movie Store — Purchasing App</h3>
-            <p>Cross-platform movie purchasing app with secure auth and payment processing.</p>
-            <div>
-              <span class="tag">Django</span><span class="tag">Python</span><span class="tag">MySQL</span>
-            </div>
-            <p><a href="https://github.com/jingxuanliu1">Code</a></p>
-          </article>
-
-          <article class="card">
-            <h3>Interactive 2D Game</h3>
-            <p>Built core mechanics and gameplay; tested for cross-platform compatibility.</p>
-            <div>
-              <span class="tag">C</span><span class="tag">Unity</span>
-            </div>
-            <p><a href="https://github.com/jingxuanliu1">Code</a></p>
-          </article>
-
-          <article class="card">
-            <h3>Autonomous Robotic System</h3>
-            <p>Programmed control algorithms and validated performance across conditions.</p>
-            <div>
-              <span class="tag">Python</span><span class="tag">Robotics</span>
-            </div>
-            <p><a href="https://github.com/jingxuanliu1">Code</a></p>
-          </article>
-
-          <article class="card">
-            <h3>SQL Dashboard — MySQL Analytics</h3>
-            <p>Interactive e-commerce analytics dashboard with complex queries, visualizations, and data insights.</p>
-            <div>
-              <span class="tag">SQL</span><span class="tag">MySQL</span><span class="tag">Chart.js</span>
-              <span class="tag">Data Analysis</span>
-            </div>
-            <p><a href="/sql-demo.html">View Dashboard ↗</a></p>
-          </article>
-        </div>
-      </section>
-    </main>
-
-    <!-- Floating chat/comment widget -->
-    <button id="chat-toggle" aria-controls="chatbox" aria-expanded="false" class="chat-toggle" title="Open comments">💬</button>
-    <div id="chatbox" class="chatbox" hidden>
-      <div class="chatbox-header">
-        <strong>Leave a comment</strong>
-        <button id="chat-close" aria-label="Close">✕</button>
-      </div>
-      <form id="chat-form" novalidate>
-        <label>
-          <span>Name</span>
-          <input type="text" id="c-name" name="name" placeholder="Your name" required>
-        </label>
-        <label>
-          <span>Email (optional)</span>
-          <input type="email" id="c-email" name="email" placeholder="you@email.com">
-        </label>
-        <label>
-          <span>Message</span>
-          <textarea id="c-msg" name="message" rows="4" placeholder="Say hi or leave feedback…" required></textarea>
-        </label>
-        <div class="chat-actions">
-          <button type="submit" class="btn">Send</button>
-          <small class="hint">Sends to the site owner (no login needed)</small>
-        </div>
-      </form>
     </div>
+  </header>
 
-    <footer>
-      © <span id="year"></span> Jingxuan Liu · Built with HTML/CSS · Hosted on GitHub Pages
-    </footer>
-  </div>
+  <main id="main-content">
+    <section id="top" class="hero section-shell" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="hero-name">Jingxuan Liu</p>
+        <h1 id="hero-title">I build AI systems <span>you can inspect.</span></h1>
+        <p class="hero-lede">I like the part after a model works: serving it efficiently, tracing what happened, and turning failures into tests the next run can pass.</p>
+        <p class="hero-context">Georgia Tech BS/MS computer science · reliable AI and backend systems.</p>
+        <p class="availability"><span aria-hidden="true"></span>Exploring 2027 software engineering, AI infrastructure, backend, and ML systems roles.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#work">Explore Work</a>
+          <a class="button button-secondary" href="/resume.pdf" target="_blank" rel="noopener">Résumé</a>
+          <a class="text-link" href="https://github.com/jingxuanliu1" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
 
-  <script>
-/* Footer year */
-document.getElementById('year').textContent = new Date().getFullYear();
+      <figure class="system-signal" aria-labelledby="system-signal-caption">
+        <svg viewBox="0 0 640 500" role="img" aria-labelledby="system-signal-title system-signal-desc">
+          <title id="system-signal-title">Evidence loop for an inspectable AI system</title>
+          <desc id="system-signal-desc">A request moves through serving, tracing, deterministic replay, and verification. The diagram includes verified results from FluxServe and TraceLab.</desc>
+          <defs>
+            <marker id="hero-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#55d5cf"/></marker>
+            <marker id="hero-arrow-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#f0c86a"/></marker>
+          </defs>
+          <path class="signal-grid-line" d="M24 70H616M24 190H616M24 310H616M24 430H616"/>
+          <path class="signal-grid-line" d="M70 24V476M210 24V476M350 24V476M490 24V476"/>
+          <text class="signal-kicker" x="34" y="47">EVIDENCE LOOP / 04 STAGES</text>
+          <g class="signal-status">
+            <circle cx="475" cy="43" r="4"/>
+            <text x="489" y="47">BEHAVIOR RECORDED</text>
+          </g>
+          <g class="request-inputs">
+            <circle cx="48" cy="182" r="6"/><circle cx="48" cy="234" r="6"/><circle cx="48" cy="286" r="6"/>
+            <path d="M54 182H92M54 234H92M54 286H92"/>
+          </g>
+          <path class="signal-path" d="M92 234H126M260 234H284M418 234H442" marker-end="url(#hero-arrow)"/>
+          <path class="signal-path signal-return" d="M510 291V348H377" marker-end="url(#hero-arrow-gold)"/>
+          <path class="signal-path signal-return" d="M242 348H174V291" marker-end="url(#hero-arrow-gold)"/>
+          <g class="system-node">
+            <rect x="126" y="176" width="134" height="115" rx="14"/>
+            <text x="147" y="207">01 / SERVE</text><text class="node-title" x="147" y="239">Bounded work</text><text class="node-note" x="147" y="263">4,688 req/s*</text>
+          </g>
+          <g class="system-node system-node-accent">
+            <rect x="284" y="176" width="134" height="115" rx="14"/>
+            <text x="305" y="207">02 / TRACE</text><text class="node-title" x="305" y="239">Record steps</text><text class="node-note" x="305" y="263">inputs + outcomes</text>
+          </g>
+          <g class="system-node">
+            <rect x="442" y="176" width="134" height="115" rx="14"/>
+            <text x="463" y="207">03 / REPLAY</text><text class="node-title" x="463" y="239">Same case</text><text class="node-note" x="463" y="263">deterministic</text>
+          </g>
+          <g class="observe-node">
+            <rect x="242" y="321" width="135" height="92" rx="14"/>
+            <text x="263" y="351">04 / VERIFY</text><text class="node-title" x="263" y="379">Compare</text><text class="node-note" x="263" y="399">120 saved cases</text>
+          </g>
+          <path class="evidence-bracket" d="M98 145V123H576V145"/>
+          <text class="evidence-label" x="337" y="112" text-anchor="middle">REQUEST → EVIDENCE, NOT A BLACK BOX</text>
+          <circle class="signal-pulse signal-pulse-one" cx="0" cy="0" r="7"/>
+          <circle class="signal-pulse signal-pulse-two" cx="0" cy="0" r="7"/>
+        </svg>
+        <figcaption id="system-signal-caption"><span>serve → trace → replay → verify</span> *FluxServe reproducible NumPy CPU benchmark.</figcaption>
+      </figure>
+    </section>
 
-/* Sprite-glow starfield with adaptive quality (fast + pretty) */
-(function(){
-  const canvas = document.getElementById('stars');
-  const ctx = canvas.getContext('2d');
-  let cssW, cssH, dpr, stars = [];
+    <section class="section section-principles" aria-labelledby="principles-title">
+      <div class="section-shell">
+        <header class="section-heading compact-heading">
+          <p class="section-label">Operating principles</p>
+          <h2 id="principles-title">How I approach engineering</h2>
+        </header>
+        <div class="principle-grid">
+          <article><span>01</span><h3>Measure before optimizing</h3><p>I use reproducible benchmarks to identify bottlenecks and evaluate whether a change produces a meaningful result.</p></article>
+          <article><span>02</span><h3>Make failures reproducible</h3><p>I build deterministic tests and replayable workflows so failures become evidence rather than mysteries.</p></article>
+          <article><span>03</span><h3>Design for dependable behavior</h3><p>I consider cancellation, bounded work, failure handling, evaluation, and clear system boundaries.</p></article>
+        </div>
+      </div>
+    </section>
 
-  // Mouse tracking for constellation effect
-  const mouse = { x: null, y: null, active: false };
-  window.addEventListener('pointermove', (e)=>{
-    const rect = canvas.getBoundingClientRect();
-    mouse.x = e.clientX - rect.left;
-    mouse.y = e.clientY - rect.top;
-    mouse.active = true;
-  }, { passive:true });
-  window.addEventListener('pointerleave', ()=>{ mouse.active = false; }, { passive:true });
+    <section class="evidence-band" aria-label="Verified engineering evidence">
+      <div class="section-shell evidence-grid">
+        <div><strong>4,688</strong><span>requests/second</span><small>FluxServe</small></div>
+        <div><strong>≈2.5×</strong><span>baseline throughput</span><small>FluxServe</small></div>
+        <div><strong>−65%</strong><span>p95 latency</span><small>FluxServe</small></div>
+        <div><strong>120</strong><span>deterministic cases</span><small>TraceLab AI</small></div>
+        <div><strong>47,236</strong><span>labels audited</span><small>PERCLOS research</small></div>
+      </div>
+      <p class="section-shell evidence-note">FluxServe results are from a reproducible NumPy CPU benchmark—not production traffic.</p>
+    </section>
 
-  // Respect reduced motion
-  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    <section id="work" class="section section-work" aria-labelledby="work-title">
+      <div class="section-shell">
+        <header class="section-heading">
+          <p class="section-label">01 / Featured work</p>
+          <h2 id="work-title">Three systems. One standard: show the evidence.</h2>
+          <p>Each project is presented as an engineering argument: the problem, the system I built, how I tested it, what the result means, and where the evidence stops.</p>
+        </header>
 
-  // ---- Adaptive quality ----
-  let quality = reduceMotion ? 1 : 3; // 3=high, 2=med, 1=low
-  function currentTunables(){
-    if (quality === 3) return { MAX_DPR:1.5, DENSITY:0.18, LINES:700, GRID_N:2 };
-    if (quality === 2) return { MAX_DPR:1.35, DENSITY:0.14, LINES:450, GRID_N:3 };
-    return               { MAX_DPR:1.2, DENSITY:0.10, LINES:300, GRID_N:4 };
-  }
-  let fpsSamples = [];
-  let lastFPSDropAt = 0;
-  function trackFPS(dt){
-    const fps = 1 / Math.max(0.0001, dt);
-    fpsSamples.push(fps);
-    if (fpsSamples.length > 30) fpsSamples.shift();
-    const avg = fpsSamples.reduce((a,b)=>a+b,0) / fpsSamples.length;
-    const now = performance.now();
-    if (avg < 48 && quality > 1 && now - lastFPSDropAt > 2000){
-      quality--;
-      lastFPSDropAt = now;
-      applyTunablesAndResize();
-    }
-  }
-  let MAX_DPR = 1.5, STAR_DENSITY = 0.18, MAX_LINES_PER_FRAME = 700, GRID_REBUILD_EVERY_N = 2;
+        <article class="feature-card feature-flux" aria-labelledby="flux-title">
+          <div class="feature-copy">
+            <p class="project-meta">AI infrastructure · August 2026</p>
+            <h3 id="flux-title">FluxServe</h3>
+            <p class="feature-subtitle">A high-throughput model-serving gateway with bounded behavior.</p>
+            <p>I implemented a deadline-aware admission queue, dynamic batching, opt-in safe caching, cancellation handling, explicit backend fallback, metrics, and a reproducible benchmark harness.</p>
+            <dl class="mini-results">
+              <div><dt>4,688</dt><dd>requests/second</dd></div>
+              <div><dt>6.39 ms</dt><dd>p95 latency</dd></div>
+              <div><dt>0</dt><dd>benchmark errors</dd></div>
+            </dl>
+            <p class="scope-note">Concurrency 32 · 1,200 requests · max batch 16 · 2 ms wait · deterministic NumPy CPU model.</p>
+            <div class="card-actions">
+              <a class="button button-primary" href="/projects/fluxserve.html">Technical Case Study</a>
+              <span class="evidence-state">Private source · public evidence summary</span>
+            </div>
+          </div>
+          <div class="feature-visual" aria-label="FluxServe architecture and benchmark chart">
+            <div class="diagram-card">
+              <p class="visual-label">Request path</p>
+              <svg viewBox="0 0 700 230" role="img" aria-label="Requests move through admission, a dynamic batcher, model execution, and measurements, with caching and cancellation at the gateway.">
+                <defs><marker id="flux-arrow-home" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#55d5cf"/></marker></defs>
+                <path class="diagram-path" d="M150 82H202M328 82H380M506 82H558" marker-end="url(#flux-arrow-home)"/>
+                <rect class="diagram-node" x="18" y="46" width="132" height="72" rx="10"/><text class="diagram-title" x="84" y="78" text-anchor="middle">Requests</text><text class="diagram-note" x="84" y="98" text-anchor="middle">validate</text>
+                <rect class="diagram-node diagram-node-cyan" x="202" y="46" width="126" height="72" rx="10"/><text class="diagram-title" x="265" y="78" text-anchor="middle">Admission</text><text class="diagram-note" x="265" y="98" text-anchor="middle">bounded</text>
+                <rect class="diagram-node" x="380" y="46" width="126" height="72" rx="10"/><text class="diagram-title" x="443" y="78" text-anchor="middle">Batcher</text><text class="diagram-note" x="443" y="98" text-anchor="middle">deadline first</text>
+                <rect class="diagram-node" x="558" y="46" width="126" height="72" rx="10"/><text class="diagram-title" x="621" y="78" text-anchor="middle">Backend</text><text class="diagram-note" x="621" y="98" text-anchor="middle">explicit fallback</text>
+                <path class="diagram-support" d="M265 118V158H198M265 158H332"/>
+                <rect class="diagram-node small" x="112" y="158" width="172" height="48" rx="9"/><text class="diagram-note" x="198" y="187" text-anchor="middle">cache · TTL + version key</text>
+                <rect class="diagram-node small" x="302" y="158" width="148" height="48" rx="9"/><text class="diagram-note" x="376" y="187" text-anchor="middle">cancel · timeout</text>
+              </svg>
+            </div>
+            <div class="bar-chart" aria-label="FluxServe benchmark throughput comparison">
+              <div><span>Unbatched</span><i style="--bar:40%"></i><strong>1,873</strong></div>
+              <div><span>Dynamic batch</span><i style="--bar:100%"></i><strong>4,688</strong></div>
+              <small>Requests/second · same CPU workload</small>
+            </div>
+          </div>
+        </article>
 
-  function applyTunablesAndResize(){
-    const t = currentTunables();
-    MAX_DPR = t.MAX_DPR; STAR_DENSITY = t.DENSITY;
-    MAX_LINES_PER_FRAME = t.LINES; GRID_REBUILD_EVERY_N = t.GRID_N;
-    resize();
-  }
+        <article class="feature-card feature-trace" aria-labelledby="trace-title">
+          <div class="feature-copy">
+            <p class="project-meta">Agent evaluation · August 2026</p>
+            <h3 id="trace-title">TraceLab AI</h3>
+            <p class="feature-subtitle">Deterministic evaluation and replay for AI-agent workflows.</p>
+            <p>I built a dependency-light asynchronous evaluator that scores tool selection, arguments, ordering, recovery, refusal, and untrusted output—and stores traces in SQLite for replay and comparison.</p>
+            <dl class="mini-results">
+              <div><dt>120</dt><dd>saved cases</dd></div>
+              <div><dt>12</dt><dd>test categories</dd></div>
+              <div><dt>9</dt><dd>passing tests</dd></div>
+            </dl>
+            <p class="scope-note">Deterministic local agents and tools · concurrency 8 · 2-second case timeout · zero provider calls.</p>
+            <div class="card-actions">
+              <a class="button button-primary" href="/projects/tracelab.html">Technical Case Study</a>
+              <span class="evidence-state">Private source · public evidence summary</span>
+            </div>
+          </div>
+          <div class="feature-visual">
+            <div class="trace-console" aria-label="Example TraceLab test result">
+              <div class="console-head"><span>saved_trace.json</span><span class="pass">PASS</span></div>
+              <ol>
+                <li><span>plan</span><code>retrieve → validate → answer</code></li>
+                <li><span>tool</span><code>controlled_retrieval(query)</code></li>
+                <li><span>guard</span><code>untrusted output treated as data</code></li>
+                <li><span>score</span><code>tool ✓ args ✓ order ✓ grounded ✓</code></li>
+              </ol>
+            </div>
+            <div class="workflow-row" aria-label="TraceLab workflow">
+              <span>benchmark</span><b>→</b><span>async evaluator</span><b>→</b><span>trajectory score</span><b>→</b><span>replay</span>
+            </div>
+          </div>
+        </article>
 
-  const SPEED_SCALE = reduceMotion ? 0.25 : 1.0;
-  const MAX_DIST = 130, MOUSE_RADIUS = 180;
+        <article class="feature-card feature-perclos" aria-labelledby="perclos-title">
+          <div class="feature-copy">
+            <p class="project-meta">Applied computer vision · May–August 2026</p>
+            <h3 id="perclos-title">Real-Time PERCLOS Driver-Fatigue Detection</h3>
+            <p class="feature-subtitle">Georgia Tech WISH Center research spanning data audit, eye-state inference, and temporal fatigue analysis.</p>
+            <p>I developed a MobileNetV3Small-based eye-state classifier, audited the labeled image tree for duplicate and split-leakage risks, and integrated recorded-video and live-camera predictions into PERCLOS timelines.</p>
+            <dl class="mini-results">
+              <div><dt>47,236</dt><dd>labels audited</dd></div>
+              <div><dt>32,932</dt><dd>unique hashes</dd></div>
+              <div><dt>2</dt><dd>input modes</dd></div>
+            </dl>
+            <p class="scope-note">The 47,236 figure is a raw-tree file count, not an independent sample count. Classifier quality is intentionally not claimed because training lineage is incomplete.</p>
+            <div class="card-actions">
+              <a class="button button-primary" href="/projects/perclos.html">Technical Case Study</a>
+              <a class="button button-secondary" href="https://github.com/jingxuanliu1/perclos-fatigue-detection" target="_blank" rel="noopener">Public Repository ↗</a>
+            </div>
+          </div>
+          <figure class="feature-image">
+            <img src="/assets/perclos-demo.png" width="1500" height="540" loading="lazy" decoding="async" alt="Recorded driver-fatigue analysis showing left and right eye predictions, eye crops, a PERCLOS percentage, and a temporal trend chart.">
+            <figcaption>Real output from the recorded-video analysis pipeline.</figcaption>
+          </figure>
+        </article>
+      </div>
+    </section>
 
-  let glowSprite = null;
-  function makeGlowSprite(){
-    const size = 64;
-    const c = document.createElement('canvas');
-    c.width = c.height = size;
-    const g = c.getContext('2d');
-    const grad = g.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
-    grad.addColorStop(0.0, 'rgba(255,255,255,0.95)');
-    grad.addColorStop(0.25, 'rgba(255,255,255,0.60)');
-    grad.addColorStop(0.55, 'rgba(122,162,255,0.35)');
-    grad.addColorStop(1.0, 'rgba(122,162,255,0.00)');
-    g.fillStyle = grad; g.fillRect(0,0,size,size);
-    return c;
-  }
+    <section id="journey" class="section section-journey" aria-labelledby="journey-title">
+      <div class="section-shell">
+        <header class="section-heading">
+          <p class="section-label">02 / Engineering journey</p>
+          <h2 id="journey-title">From complete applications to dependable AI infrastructure.</h2>
+          <p>I began by learning to build complete applications, moved into machine-learning research, and now focus on reliable AI infrastructure and evaluation.</p>
+        </header>
+        <ol class="journey-line">
+          <li>
+            <div class="journey-year">2025</div>
+            <div class="journey-content"><p class="journey-stage">Building full-stack foundations</p><h3>Applications with real system boundaries</h3><p>Collaborative Django repositories introduced models, views, templates, accounts, and application state. My publicly attributable Movie Store commits include Django model and view changes.</p><div class="journey-projects"><a href="https://github.com/jingxuanliu1/Movie-Store" target="_blank" rel="noopener">Movie Store ↗</a><a href="https://github.com/jingxuanliu1/timeMap" target="_blank" rel="noopener">Time Map ↗</a></div></div>
+          </li>
+          <li>
+            <div class="journey-year">2025–2026</div>
+            <div class="journey-content"><p class="journey-stage">Learning data analysis and machine learning</p><h3>Making models and queries visible</h3><p>I built browser-based educational visualizations for clustering and neural networks, then an interactive SQL dashboard over a clearly labeled sample dataset.</p><div class="journey-projects"><a href="/ml-viz.html">Clustering Lab</a><a href="/ml-nn.html">Neural Network Lab</a><a href="/sql-demo.html">SQL Dashboard</a></div></div>
+          </li>
+          <li>
+            <div class="journey-year">May–Aug 2026</div>
+            <div class="journey-content"><p class="journey-stage">Conducting computer-vision research</p><h3>Separating model behavior from system evidence</h3><p>At the WISH Center, I audited image provenance and duplicates, developed an eye-state classifier, and connected inference to recorded-video and live-camera PERCLOS outputs.</p><div class="journey-projects"><a href="/projects/perclos.html">PERCLOS case study</a></div></div>
+          </li>
+          <li>
+            <div class="journey-year">Aug 2026–Present</div>
+            <div class="journey-content"><p class="journey-stage">Exploring cybersecurity and compliance</p><h3>Reliability includes controls and risk</h3><p>Through the DIB Cyber Compliance VIP, I contribute to research supporting manufacturers pursuing CMMC compliance under NIST SP 800-171.</p></div>
+          </li>
+          <li class="journey-current">
+            <div class="journey-year">August 2026</div>
+            <div class="journey-content"><p class="journey-stage">Engineering AI infrastructure and evaluation</p><h3>Bound the work. Record the trace. Reproduce the result.</h3><p>FluxServe and TraceLab AI bring the earlier lessons together in model-serving behavior, deterministic evaluation, cancellation, failure isolation, and measured evidence.</p><div class="journey-projects"><a href="/projects/fluxserve.html">FluxServe</a><a href="/projects/tracelab.html">TraceLab AI</a></div></div>
+          </li>
+        </ol>
+        <a class="button button-secondary archive-link" href="/projects.html">View All Projects</a>
+      </div>
+    </section>
 
-  function resize(){
-    dpr = Math.max(1, Math.min(MAX_DPR, window.devicePixelRatio || 1));
-    cssW = window.innerWidth; cssH = window.innerHeight;
-    canvas.width = Math.floor(cssW * dpr);
-    canvas.height = Math.floor(cssH * dpr);
-    canvas.style.width = cssW + 'px';
-    canvas.style.height = cssH + 'px';
-    ctx.setTransform(dpr,0,0,dpr,0,0);
+    <section id="experience" class="section section-experience" aria-labelledby="experience-title">
+      <div class="section-shell">
+        <header class="section-heading">
+          <p class="section-label">03 / Experience & education</p>
+          <h2 id="experience-title">Research depth, systems direction.</h2>
+        </header>
+        <div class="experience-grid">
+          <div class="experience-list">
+            <article>
+              <div class="role-topline"><span>May 2026–August 2026</span><span>Atlanta, GA</span></div>
+              <h3>Research Intern</h3>
+              <p class="organization">WISH Center, Georgia Institute of Technology</p>
+              <ul><li>Developed a MobileNetV3Small-based eye-state classifier and audited 47,236 labeled images for duplicate and split-leakage risks.</li><li>Integrated recorded-video and live-camera eye-state predictions into PERCLOS-based fatigue timelines with annotated visual outputs.</li></ul>
+            </article>
+            <article>
+              <div class="role-topline"><span>August 2026–Present</span><span>Atlanta, GA</span></div>
+              <h3>Cybersecurity Researcher — DIB Cyber Compliance VIP</h3>
+              <p class="organization">Georgia Tech VIP Program</p>
+              <ul><li>Contribute to multidisciplinary cybersecurity research supporting small and medium-sized Defense Industrial Base manufacturers pursuing CMMC compliance under NIST SP 800-171.</li><li>Evaluate security controls, risk-management practices, and cybersecurity tools for compliance, threat mitigation, and incident response.</li></ul>
+            </article>
+          </div>
+          <aside class="education-panel" aria-label="Education">
+            <p class="card-kicker">Education</p>
+            <h3>Georgia Institute of Technology</h3>
+            <p>BS/MS in Computer Science</p>
+            <dl>
+              <div><dt>B.S.</dt><dd>Expected May 2027</dd></div>
+              <div><dt>M.S.</dt><dd>Admitted · Expected May 2028</dd></div>
+              <div><dt>GPA</dt><dd>3.53</dd></div>
+            </dl>
+            <p class="education-note">Coursework includes algorithms, machine learning, databases, systems and networks, computer organization, and object-oriented design.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
 
-    const small = cssW * cssH < 800 * 800;
-    const density = reduceMotion ? Math.min(0.10, STAR_DENSITY) : (small ? Math.max(0.10, STAR_DENSITY * 0.8) : STAR_DENSITY);
-    const target = Math.max(90, Math.floor((cssW * cssH / 1000000) * density * 1100));
-    stars = new Array(target).fill(0).map(()=>newStar(true));
+    <section id="about" class="section section-about" aria-labelledby="about-title">
+      <div class="section-shell about-layout">
+        <div>
+          <p class="section-label">04 / Beyond the build</p>
+          <h2 id="about-title">A portfolio that records the process, too.</h2>
+        </div>
+        <div class="about-copy">
+          <p>I’m a Georgia Tech student who enjoys learning across systems, machine learning, and security. I built this site to document not only my strongest work, but also the process of becoming a better engineer.</p>
+          <p>The common thread is curiosity about dependable behavior: what a system does under load, how a failure can be replayed, and which conclusions the evidence actually supports.</p>
+        </div>
+      </div>
+    </section>
 
-    if (!glowSprite) glowSprite = makeGlowSprite();
-  }
+    <section class="section section-contact" aria-labelledby="contact-title">
+      <div class="section-shell contact-card">
+        <div>
+          <p class="section-label">05 / Contact</p>
+          <h2 id="contact-title">Let’s build reliable systems.</h2>
+          <p>I’m interested in software engineering, AI/ML infrastructure, backend, systems, and research-driven engineering opportunities.</p>
+        </div>
+        <div class="contact-links">
+          <a class="button button-primary" href="mailto:jingxuanliu317@gmail.com">jingxuanliu317@gmail.com</a>
+          <a href="https://github.com/jingxuanliu1" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+          <a href="https://www.linkedin.com/in/jing-xuan-liu/" target="_blank" rel="noopener">LinkedIn <span aria-hidden="true">↗</span></a>
+          <a href="/resume.pdf" target="_blank" rel="noopener">Current résumé <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
 
-  function newStar(initial=false){
-    const r = Math.random()*1.6 + 0.6;
-    const speed = (Math.random()*0.9 + 0.35) * (cssH/900) * SPEED_SCALE;
-    const drift = (Math.random()*0.3 - 0.15) * SPEED_SCALE;
-    const tw = Math.random()*0.9 + 0.3;
-    return {
-      x: Math.random()*cssW,
-      y: initial ? Math.random()*cssH : -10,
-      r, speed, drift,
-      baseA: Math.random()*0.6 + 0.35,
-      t: Math.random()*Math.PI*2,
-      tw,
-    };
-  }
-
-  function step(dt){
-    for (let s of stars){
-      s.y += s.speed * dt * 60;
-      s.x += s.drift * dt * 60;
-      s.t += (s.tw * dt);
-      if (s.y - s.r > cssH) { s.y = -s.r; s.x = Math.random()*cssW; }
-      if (s.x < -5) s.x = cssW + 5; else if (s.x > cssW + 5) s.x = -5;
-    }
-  }
-
-  let cachedGrid = null;
-  let frameCount = 0;
-  function buildGrid(cell){
-    const grid = new Map();
-    for (let i=0;i<stars.length;i++){
-      const s = stars[i];
-      const gx = Math.floor(s.x / cell);
-      const gy = Math.floor(s.y / cell);
-      const key = gx+','+gy;
-      if (!grid.has(key)) grid.set(key, []);
-      grid.get(key).push(i);
-    }
-    return grid;
-  }
-
-  function draw(){
-    ctx.clearRect(0,0,cssW,cssH);
-
-    // 1) Draw stars
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    for (let s of stars){
-      const twinkle = 0.6 + 0.4 * Math.sin(s.t);
-      const a = Math.max(0.12, Math.min(1, s.baseA * twinkle));
-      const haloScale = 2.6;
-      const w = s.r * haloScale * 8;
-      const h = w;
-      ctx.globalAlpha = a;
-      ctx.drawImage(glowSprite, s.x - w/2, s.y - h/2, w, h);
-    }
-    ctx.restore();
-
-    // 2) Constellation lines near mouse (throttled)
-    if (mouse.active){
-      const cell = 130;
-      if (frameCount % 2 === 0 || !cachedGrid){
-        cachedGrid = buildGrid(cell);
-      }
-      const grid = cachedGrid;
-
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-
-      let linesDrawn = 0;
-
-      outer: for (let i=0;i<stars.length;i++){
-        const s = stars[i];
-        const dm1 = Math.hypot(mouse.x - s.x, mouse.y - s.y);
-        if (dm1 > 180) continue;
-
-        const gx = Math.floor(s.x / cell), gy = Math.floor(s.y / cell);
-        for (let oy=-1; oy<=1; oy++){
-          for (let ox=-1; ox<=1; ox++){
-            const key = (gx+ox)+','+(gy+oy);
-            const bucket = grid.get(key);
-            if (!bucket) continue;
-            for (const j of bucket){
-              if (j <= i) continue;
-              const t = stars[j];
-              const dm2 = Math.hypot(mouse.x - t.x, mouse.y - t.y);
-              const dx = t.x - s.x, dy = t.y - s.y;
-              const d = Math.hypot(dx, dy);
-              if (d < 130 && dm2 < 180){
-                const nearMouse = 1 - Math.min(Math.min(dm1, dm2) / 180, 1);
-                const nearEachOther = 1 - (d / 130);
-                const alpha = Math.max(0, Math.min(1, 0.9 * nearMouse * nearEachOther));
-
-                if (++linesDrawn > 700) { break outer; }
-
-                ctx.globalAlpha = alpha * 0.9;
-                ctx.lineWidth = 1.0 + 0.6 * (nearMouse * nearEachOther);
-                ctx.strokeStyle = '#7aa2ff';
-                ctx.beginPath();
-                ctx.moveTo(s.x, s.y);
-                ctx.lineTo(t.x, t.y);
-                ctx.stroke();
-              }
-            }
-          }
-        }
-      }
-      ctx.restore();
-    }
-  }
-
-  let last = performance.now();
-  function loop(now){
-    const dt = Math.min(0.05, (now - last)/1000);
-    last = now;
-    frameCount++;
-    trackFPS(dt);
-    step(dt);
-    draw();
-    requestAnimationFrame(loop);
-  }
-
-  window.addEventListener('resize', applyTunablesAndResize, { passive:true });
-  applyTunablesAndResize();
-  requestAnimationFrame(loop);
-})();
-
-/* Turn on the scene light after ~3s, then let the walker animate */
-(function(){
-  const scene = document.getElementById('hero-scene');
-  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!scene) return;
-  setTimeout(()=>{ 
-    scene.classList.add('scene-on');
-  }, reduceMotion ? 0 : 3000);
-})();
-
-/* Chat widget logic: submit via Form endpoint if configured, else mailto fallback */
-(function(){
-  const FORM_ENDPOINT = ""; // <-- optional: your Formspree/Getform endpoint
-  const DEST_EMAIL = "jingxuanliu317@gmail.com"; // mailto fallback
-
-  const toggle = document.getElementById('chat-toggle');
-  const box = document.getElementById('chatbox');
-  const closeBtn = document.getElementById('chat-close');
-  const form = document.getElementById('chat-form');
-
-  // Honeypot field (to reduce spam)
-  const honeypot = document.createElement('input');
-  honeypot.type = 'text';
-  honeypot.name = 'company';
-  honeypot.autocomplete = 'off';
-  honeypot.style.display = 'none';
-  form.appendChild(honeypot);
-
-  function toast(msg){
-    const t = document.createElement('div');
-    t.className = 'toast';
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(()=>{ t.remove(); }, 2600);
-  }
-
-  function open(){ box.hidden=false; toggle.setAttribute('aria-expanded','true'); }
-  function close(){ box.hidden=true; toggle.setAttribute('aria-expanded','false'); }
-
-  toggle.addEventListener('click', ()=> box.hidden ? open() : close());
-  closeBtn.addEventListener('click', close);
-
-  form.addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    const name = (document.getElementById('c-name').value||'').trim();
-    let email = (document.getElementById('c-email').value||'').trim();
-    const msg = (document.getElementById('c-msg').value||'').trim();
-    if (!name || !msg){ toast('Please include your name and a message.'); return; }
-    if (honeypot.value){ return; } // bot
-
-    if (!email) email = 'Anonymous';
-
-    if (FORM_ENDPOINT){
-      try{
-        const res = await fetch(FORM_ENDPOINT, {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
-          body: JSON.stringify({ name, email, message: msg, _subject: `Portfolio message from ${name}` })
-        });
-        if (!res.ok) throw new Error('Network response was not ok');
-        toast('Message sent ✔');
-        form.reset();
-        close();
-      }catch(err){
-        console.error(err);
-        toast('Send failed. Using email instead…');
-        const subject = encodeURIComponent('Portfolio message from ' + name);
-        const body = encodeURIComponent(`From: ${name} <${email}>\n\n${msg}\n\n— Sent from jingxuanliu.com`);
-        window.location.href = `mailto:${DEST_EMAIL}?subject=${subject}&body=${body}`;
-        close();
-      }
-    } else {
-      const subject = encodeURIComponent('Portfolio message from ' + name);
-      const body = encodeURIComponent(`From: ${name} <${email}>\n\n${msg}\n\n— Sent from jingxuanliu.com`);
-      window.location.href = `mailto:${DEST_EMAIL}?subject=${subject}&body=${body}`;
-      close();
-    }
-  });
-})();
-
-/* ===== ML dropdown behavior ===== */
-(function(){
-  const btn  = document.getElementById('ml-btn');
-  const menu = document.getElementById('ml-menu');
-  if(!btn || !menu) return;
-
-  function toggle(show){
-    menu.style.display = show ? 'block' : 'none';
-    btn.setAttribute('aria-expanded', show ? 'true' : 'false');
-  }
-
-  btn.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    toggle(menu.style.display !== 'block');
-  });
-
-  // close on outside click
-  document.addEventListener('click', (e)=>{
-    if(!menu.contains(e.target) && e.target !== btn) toggle(false);
-  });
-  // close on Escape
-  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') toggle(false); });
-})();
-  </script>
+  <footer class="site-footer">
+    <div class="section-shell"><p>Designed and built by Jingxuan Liu. <span>© <span id="year">2026</span></span></p></div>
+  </footer>
+  <script src="/script.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TraceLab AI Technical Case Study | Jingxuan Liu</title>
+  <meta name="description" content="TraceLab AI case study: deterministic evaluation, asynchronous execution, SQLite trace replay, regression gating, and 120 saved AI-agent workflow cases.">
+  <meta name="theme-color" content="#07111f">
+  <link rel="canonical" href="https://jingxuanliu1.github.io/projects/tracelab.html">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://jingxuanliu1.github.io/projects/tracelab.html">
+  <meta property="og:title" content="TraceLab AI Technical Case Study | Jingxuan Liu">
+  <meta property="og:description" content="A deterministic, replayable evaluation system for agent tool selection, arguments, ordering, recovery, refusal, and untrusted output.">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header"><div class="nav-shell"><a class="brand" href="/" aria-label="JL — Jingxuan Liu, home">JL</a><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav"><span class="sr-only">Toggle navigation</span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button><nav id="primary-nav" class="primary-nav" aria-label="Primary navigation"><a href="/#work">Work</a><a href="/#journey">Journey</a><a href="/#experience">Experience</a><a href="/#about">About</a><a href="/resume.pdf" target="_blank" rel="noopener">Résumé</a><a href="https://github.com/jingxuanliu1" target="_blank" rel="noopener">GitHub</a><a href="https://www.linkedin.com/in/jing-xuan-liu/" target="_blank" rel="noopener">LinkedIn</a></nav></div></header>
+
+  <main id="main-content">
+    <header class="case-hero">
+      <div class="section-shell">
+        <p class="breadcrumb"><a href="/">Home</a> / <a href="/projects.html">Projects</a> / TraceLab AI</p>
+        <div class="case-hero-grid">
+          <div><p class="case-eyebrow">Agent evaluation · August 2026</p><h1>TraceLab <span>AI</span></h1><p class="case-summary">A dependency-light evaluation system that turns agent failures into saved, searchable, replayable traces—then enforces quality thresholds in a deterministic regression gate.</p><div class="case-actions"><a class="button button-primary" href="#results">See the results</a><a class="button button-secondary" href="/resume.pdf" target="_blank" rel="noopener">View résumé</a></div></div>
+          <dl class="case-facts"><div><dt>Role</dt><dd>Independent evaluation-platform implementation</dd></div><div><dt>Core</dt><dd>Python, asyncio, SQLite, REST-style HTTP APIs</dd></div><div><dt>Cases</dt><dd>120 deterministic cases across 12 categories</dd></div><div><dt>Tests</dt><dd>9 unit, integration, and API end-to-end</dd></div><div><dt>Source</dt><dd>Private; no source code published here</dd></div></dl>
+        </div>
+      </div>
+    </header>
+
+    <div class="section-shell case-layout">
+      <nav class="case-toc" aria-label="Case study contents"><p>Case study</p><ol><li><a href="#problem">01 · Problem</a></li><li><a href="#scope">02 · Scope</a></li><li><a href="#contribution">03 · Contribution</a></li><li><a href="#architecture">04 · Architecture</a></li><li><a href="#decisions">05 · Decisions</a></li><li><a href="#challenges">06 · Challenges</a></li><li><a href="#testing">07 · Testing</a></li><li><a href="#results">08 · Results</a></li><li><a href="#limitations">09 · Limitations</a></li><li><a href="#learning">10 · Learning</a></li><li><a href="#evidence">11 · Evidence</a></li></ol></nav>
+
+      <article class="case-body">
+        <section id="problem" class="case-section">
+          <p class="section-label">01 / Problem and motivation</p><h2>An agent failure is hard to fix when the path disappears.</h2>
+          <p>End-task success alone cannot explain whether an agent chose the right tool, sent valid arguments, followed the required order, recovered from a transient failure, refused without evidence, or trusted malicious tool output. If the tool behavior or evaluation conditions shift between runs, the failure becomes difficult to reproduce.</p>
+          <p class="case-callout gold"><strong>Engineering question:</strong> can a local deterministic harness preserve enough trajectory evidence to replay failures, compare strategies, and fail a regression check without depending on a paid model provider or nondeterministic judge?</p>
+        </section>
+
+        <section id="scope" class="case-section">
+          <p class="section-label">02 / Project scope</p><h2>Evaluation is the product, not a wrapper around a chatbot.</h2>
+          <p>TraceLab AI evaluates two implemented deterministic strategies against a versioned benchmark and controlled corpus. It records tool calls and trace steps, persists runs to SQLite, exports JSON and Markdown reports, and exposes asynchronous jobs, cancellation, health, readiness, metrics, and a local dashboard.</p>
+          <ul><li>120 cases: ten in each of 12 categories.</li><li>Local calculator, date, extraction, retrieval, flaky-retrieval, and untrusted-retrieval tools.</li><li>Exact final-output, structured-output, tool-name, argument, order, recovery, grounding, citation, refusal, security, latency, token, and throughput metrics.</li><li>Searchable run history, trace replay, and regression comparison with nonzero exit on configured quality drops.</li></ul>
+        </section>
+
+        <section id="contribution" class="case-section">
+          <p class="section-label">03 / My contribution</p><h2>I implemented the evaluator from case file to regression gate.</h2>
+          <p>I built the benchmark generator, direct and planner/executor strategies, isolated tool registry, bounded asynchronous runner, trajectory scorer, SQLite migrations and persistence layer, exports, HTTP job surface, cancellation path, rate limits, metrics, dashboard, comparison command, and tests.</p>
+          <p>The saved benchmark is not presented as a general leaderboard. Its job is narrower and more practical: make defined workflow behavior reproducible enough to support debugging and CI decisions.</p>
+        </section>
+
+        <section id="architecture" class="case-section">
+          <p class="section-label">04 / Architecture</p><h2>One case, one isolated world, one complete trace.</h2>
+          <figure class="architecture-large">
+            <svg viewBox="0 0 900 520" role="img" aria-labelledby="trace-arch-title trace-arch-desc">
+              <title id="trace-arch-title">TraceLab AI architecture</title><desc id="trace-arch-desc">A versioned benchmark enters a bounded asynchronous evaluator. Every case gets an isolated tool registry and agent adapter. The trajectory scorer produces a run report and trace graph, which persist to SQLite and export to JSON or Markdown. An HTTP API and dashboard access saved runs.</desc>
+              <defs><marker id="trace-case-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#f0c86a"/></marker></defs>
+              <path class="signal-grid-line" d="M20 92H880M20 260H880M20 428H880M180 25V495M450 25V495M720 25V495"/>
+              <path class="diagram-path" style="stroke:#f0c86a" d="M202 158H260M430 158H488M658 158H716" marker-end="url(#trace-case-arrow)"/>
+              <rect class="diagram-node" x="32" y="105" width="170" height="106" rx="12"/><text class="diagram-title" x="117" y="145" text-anchor="middle">Benchmark JSON</text><text class="diagram-note" x="117" y="171" text-anchor="middle">120 versioned cases</text><text class="diagram-note" x="117" y="192" text-anchor="middle">expectations + hash</text>
+              <rect class="diagram-node" x="260" y="105" width="170" height="106" rx="12" style="stroke:#f0c86a"/><text class="diagram-title" x="345" y="145" text-anchor="middle">Async evaluator</text><text class="diagram-note" x="345" y="171" text-anchor="middle">semaphore + timeout</text><text class="diagram-note" x="345" y="192" text-anchor="middle">cancel + isolate</text>
+              <rect class="diagram-node" x="488" y="105" width="170" height="106" rx="12"/><text class="diagram-title" x="573" y="145" text-anchor="middle">Agent + tools</text><text class="diagram-note" x="573" y="171" text-anchor="middle">fresh registry per case</text><text class="diagram-note" x="573" y="192" text-anchor="middle">controlled corpus</text>
+              <rect class="diagram-node" x="716" y="105" width="152" height="106" rx="12"/><text class="diagram-title" x="792" y="145" text-anchor="middle">Trajectory scorer</text><text class="diagram-note" x="792" y="171" text-anchor="middle">tool / args / order</text><text class="diagram-note" x="792" y="192" text-anchor="middle">recovery / refusal</text>
+              <path class="diagram-support" d="M792 211V282H650M792 282H814M650 282V335M814 282V335"/>
+              <rect class="diagram-node small" x="544" y="335" width="212" height="74" rx="10"/><text class="diagram-title" x="650" y="365" text-anchor="middle">SQLite trace graph</text><text class="diagram-note" x="650" y="388" text-anchor="middle">runs · steps · calls · metrics</text>
+              <rect class="diagram-node small" x="736" y="335" width="132" height="74" rx="10"/><text class="diagram-title" x="802" y="365" text-anchor="middle">Exports</text><text class="diagram-note" x="802" y="388" text-anchor="middle">JSON / Markdown</text>
+              <rect class="diagram-node small" x="232" y="335" width="220" height="74" rx="10"/><text class="diagram-title" x="342" y="365" text-anchor="middle">HTTP API + dashboard</text><text class="diagram-note" x="342" y="388" text-anchor="middle">jobs · replay · metrics</text>
+              <path class="diagram-support" d="M544 372H452"/>
+              <rect class="diagram-node small" x="32" y="335" width="154" height="74" rx="10"/><text class="diagram-title" x="109" y="365" text-anchor="middle">Regression gate</text><text class="diagram-note" x="109" y="388" text-anchor="middle">exit nonzero on drop</text>
+              <path class="diagram-support" d="M232 372H186"/>
+            </svg>
+            <figcaption>The evaluator isolates every case, records structured steps and calls, and keeps persistence and exports downstream from scoring.</figcaption>
+          </figure>
+        </section>
+
+        <section id="decisions" class="case-section">
+          <p class="section-label">05 / Important engineering decisions</p><h2>Determinism is a debugging feature.</h2>
+          <div class="decision-list">
+            <article><h3>Use explicit expectations instead of an LLM judge</h3><p>Exact outcomes and structured trajectory requirements remove provider cost, judge nondeterminism, and judge failure modes from the verified core.</p></article>
+            <article><h3>Build a fresh tool registry for every case</h3><p>Case isolation prevents state from leaking across runs and makes retry or recovery behavior repeatable.</p></article>
+            <article><h3>Store trace boundaries, not just final scores</h3><p>Runs, cases, steps, tool calls, arguments, outputs, errors, attempts, durations, and metrics stay queryable for replay.</p></article>
+            <article><h3>Keep the core dependency-light</h3><p>SQLite and the Python standard library make a clean local run possible without a database service, provider key, or paid API.</p></article>
+            <article><h3>Treat tool output as untrusted data</h3><p>The verified strategy accepts only the expected value line from the controlled untrusted-output path instead of executing embedded instructions.</p></article>
+          </div>
+        </section>
+
+        <section id="challenges" class="case-section">
+          <p class="section-label">06 / Technical challenges</p><h2>Evaluation has its own reliability failure modes.</h2>
+          <ul><li><strong>Bounded concurrency:</strong> a semaphore limits independent cases while <code>asyncio.wait_for</code> enforces a two-second case timeout.</li><li><strong>Cancellation:</strong> a cancellation event is checked before admission and during retry; the HTTP API returns a job token and exposes a cancel endpoint.</li><li><strong>Failure isolation:</strong> an exception becomes a case-local error rather than terminating the full suite.</li><li><strong>Trace integrity:</strong> a versioned benchmark and suite content hash help detect changed evaluation inputs.</li><li><strong>Security cases:</strong> prompt-injection and malicious tool-output cases require the agent to treat retrieved text as data, not instructions.</li></ul>
+        </section>
+
+        <section id="testing" class="case-section">
+          <p class="section-label">07 / Testing and evaluation</p><h2>The suite tests workflow behavior, not general intelligence.</h2>
+          <table class="test-table"><thead><tr><th>Protocol</th><th>Verified setting</th></tr></thead><tbody><tr><td>Dataset</td><td>120 unique deterministic cases; ten per category across 12 categories</td></tr><tr><td>Strategies</td><td>Direct one-step baseline and planner/executor</td></tr><tr><td>Concurrency</td><td>8</td></tr><tr><td>Timeout</td><td>2 seconds per case</td></tr><tr><td>Seed</td><td>20260827</td></tr><tr><td>Tools</td><td>Local deterministic calculator, date, extraction, retrieval, flaky retrieval, and untrusted retrieval</td></tr><tr><td>Provider calls</td><td>Zero</td></tr></tbody></table>
+          <p>Nine unit, integration, and API end-to-end tests cover benchmark shape, evaluation, persistence, search, trace replay, job execution, cancellation, and both passing and intentionally failing regression comparisons.</p>
+        </section>
+
+        <section id="results" class="case-section">
+          <p class="section-label">08 / Results</p><h2>The saved planner/executor run satisfied every authored case.</h2>
+          <div class="result-panel"><div><strong>50%</strong><span>direct baseline exact end-task success</span></div><div><strong>100%</strong><span>planner/executor exact success on the same 120 cases</span></div><div><strong>120</strong><span>saved cases available for deterministic replay</span></div></div>
+          <p>On the saved benchmark, the planner/executor also reached 100% for tool selection, arguments, trajectory validity, transient-failure recovery, missing-evidence refusal, prompt-injection resistance, and citation correctness.</p>
+          <p class="case-callout gold"><strong>Qualification:</strong> these results prove the behavior of two implemented deterministic strategies against an authored local suite. They do not measure a hosted foundation model, arbitrary tools, general intelligence, or production security.</p>
+        </section>
+
+        <section id="limitations" class="case-section">
+          <p class="section-label">09 / Limitations</p><h2>A repeatable suite can still be narrow.</h2>
+          <ul><li>No LLM judge is used, so semantic equivalence beyond explicit expectations is not scored.</li><li>Provider adapters are intentionally absent from the verified core.</li><li>The benchmark is authored for regression testing, not a universal agent leaderboard.</li><li>SQLite, in-process rate limits, and the local dashboard are not a multi-tenant production architecture.</li><li>Authentication, TLS, authorization, encrypted persistence, distributed workers, and durable rate limits remain deployment responsibilities.</li><li>OpenTelemetry-compatible trace concepts are used, but the OpenTelemetry SDK/exporter is not installed and is not claimed.</li></ul>
+        </section>
+
+        <section id="learning" class="case-section">
+          <p class="section-label">10 / What I learned</p><h2>Saved failures make evaluation useful between demos.</h2>
+          <p>The most valuable output is not the 100% figure; it is a structured record that explains why a case passed or failed and can be compared after a change. This project reinforced that evaluation infrastructure needs timeouts, cancellation, isolation, versioning, and threat boundaries just like serving infrastructure.</p>
+          <p>A next iteration should preserve the deterministic core while adding provider adapters behind recorded fixtures, stronger artifact hashing, structured-output schemas, authentication, and a production-safe UI.</p>
+        </section>
+
+        <section id="evidence" class="case-section">
+          <p class="section-label">11 / Case-study evidence</p><h2>Evidence is saved; source remains private.</h2>
+          <p>This page is grounded in the implementation, versioned 120-case benchmark, complete direct and planner/executor run reports, SQLite schema, nine-test suite, architecture and threat-model documents, benchmark report, and claim-verification review. The private repository is not linked and no private code is reproduced.</p>
+          <div class="evidence-links"><a class="button button-primary" href="/projects.html">Back to project archive</a><a class="button button-secondary" href="mailto:jingxuanliu317@gmail.com?subject=TraceLab%20AI%20case%20study">Discuss TraceLab AI</a></div>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <nav class="project-neighbors" aria-label="More projects"><div class="section-shell"><a href="/projects/fluxserve.html">← Previous: FluxServe</a><a href="/projects/perclos.html">Next: PERCLOS research →</a></div></nav>
+  <footer class="site-footer"><div class="section-shell"><p>Designed and built by Jingxuan Liu. <span>© <span id="year">2026</span></span></p></div></footer>
+  <script src="/script.js" defer></script>
+</body>
+</html>

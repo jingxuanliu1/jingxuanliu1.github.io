@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PERCLOS Driver-Fatigue Research Case Study | Jingxuan Liu</title>
+  <meta name="description" content="PERCLOS driver-fatigue research case study: MobileNetV3Small eye-state classification, OpenCV video processing, live-camera integration, temporal fatigue timelines, and a 47,236-image audit.">
+  <meta name="theme-color" content="#07111f">
+  <link rel="canonical" href="https://jingxuanliu1.github.io/projects/perclos.html">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://jingxuanliu1.github.io/projects/perclos.html">
+  <meta property="og:title" content="PERCLOS Driver-Fatigue Research | Jingxuan Liu">
+  <meta property="og:description" content="Applied Georgia Tech research connecting data audit, eye-state inference, recorded video, live camera feeds, and PERCLOS timelines.">
+  <meta property="og:image" content="https://jingxuanliu1.github.io/assets/perclos-demo.png">
+  <meta property="og:image:alt" content="Recorded PERCLOS driver-fatigue analysis with eye-state predictions and a temporal fatigue chart">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://jingxuanliu1.github.io/assets/perclos-demo.png">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header"><div class="nav-shell"><a class="brand" href="/" aria-label="JL — Jingxuan Liu, home">JL</a><button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav"><span class="sr-only">Toggle navigation</span><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></button><nav id="primary-nav" class="primary-nav" aria-label="Primary navigation"><a href="/#work">Work</a><a href="/#journey">Journey</a><a href="/#experience">Experience</a><a href="/#about">About</a><a href="/resume.pdf" target="_blank" rel="noopener">Résumé</a><a href="https://github.com/jingxuanliu1" target="_blank" rel="noopener">GitHub</a><a href="https://www.linkedin.com/in/jing-xuan-liu/" target="_blank" rel="noopener">LinkedIn</a></nav></div></header>
+
+  <main id="main-content">
+    <header class="case-hero">
+      <div class="section-shell">
+        <p class="breadcrumb"><a href="/">Home</a> / <a href="/projects.html">Projects</a> / PERCLOS research</p>
+        <div class="case-hero-grid">
+          <div><p class="case-eyebrow">Applied computer vision · May–August 2026</p><h1>Real-Time PERCLOS <span>Driver-Fatigue Detection</span></h1><p class="case-summary">Georgia Tech WISH Center research connecting eye-state classification, duplicate and leakage auditing, recorded-video and live-camera processing, and temporal PERCLOS outputs.</p><div class="case-actions"><a class="button button-primary" href="https://github.com/jingxuanliu1/perclos-fatigue-detection" target="_blank" rel="noopener">Public Repository ↗</a><a class="button button-secondary" href="#results">See the evidence</a></div></div>
+          <dl class="case-facts"><div><dt>Role</dt><dd>Research Intern, WISH Center</dd></div><div><dt>Core</dt><dd>Python, TensorFlow/Keras, OpenCV, dlib</dd></div><div><dt>Audit</dt><dd>47,236 labeled files; 32,932 unique content hashes</dd></div><div><dt>Inputs</dt><dd>Recorded video and live camera</dd></div><div><dt>Source</dt><dd>Public repository; restricted media excluded</dd></div></dl>
+        </div>
+      </div>
+    </header>
+
+    <div class="section-shell case-layout">
+      <nav class="case-toc" aria-label="Case study contents"><p>Case study</p><ol><li><a href="#problem">01 · Problem</a></li><li><a href="#scope">02 · Scope</a></li><li><a href="#contribution">03 · Contribution</a></li><li><a href="#architecture">04 · Architecture</a></li><li><a href="#decisions">05 · Decisions</a></li><li><a href="#challenges">06 · Challenges</a></li><li><a href="#testing">07 · Testing</a></li><li><a href="#results">08 · Results</a></li><li><a href="#limitations">09 · Limitations</a></li><li><a href="#learning">10 · Learning</a></li><li><a href="#evidence">11 · Evidence</a></li></ol></nav>
+
+      <article class="case-body">
+        <section id="problem" class="case-section">
+          <p class="section-label">01 / Problem and motivation</p><h2>Fatigue is temporal; a single eye prediction is not the system.</h2>
+          <p>A classifier can label a cropped eye as open or closed, but a driver-fatigue pipeline also has to find the face and eyes in imperfect frames, preserve left/right evidence, handle missing detections, aggregate behavior through time, and produce outputs that a researcher can inspect.</p>
+          <p class="case-callout"><strong>Research question:</strong> how can eye-state predictions from recorded video and live camera feeds be transformed into a PERCLOS timeline without hiding missing detections or overstating classifier evidence?</p>
+        </section>
+
+        <section id="scope" class="case-section">
+          <p class="section-label">02 / Project scope</p><h2>From labeled eye crops to annotated temporal output.</h2>
+          <p>The pipeline detects eye regions, prepares 64-by-32 grayscale crops, runs a MobileNetV3Small-based open/closed classifier, applies temporal and agreement rules, and aggregates valid detections into a sliding-window PERCLOS timeline.</p>
+          <ul><li>Recorded-video analysis and live-camera analysis.</li><li>dlib 81-point facial-landmark eye cropping.</li><li>Separate left-eye and right-eye probabilities.</li><li>Hybrid decisions using classifier probability, eye-aspect ratio, dark-center evidence, and left/right consistency.</li><li>Annotated frames, CSV outputs, and a temporal PERCLOS graph.</li><li>Public-safe audit tooling that emits counts and hashes rather than copying restricted images.</li></ul>
+        </section>
+
+        <section id="contribution" class="case-section">
+          <p class="section-label">03 / My contribution</p><h2>I connected model development to research integrity and end-to-end behavior.</h2>
+          <p>I developed the MobileNetV3Small-based eye-state classifier, audited the labeled raw tree for exact duplicates and split-leakage risks, and integrated recorded-video and live-camera predictions into annotated PERCLOS timelines.</p>
+          <p>The public-safe case study and tooling preserve the audit and aggregation logic without redistributing participant media, face images, restricted datasets, or the large private research package.</p>
+        </section>
+
+        <section id="architecture" class="case-section">
+          <p class="section-label">04 / Architecture</p><h2>Detection quality and classifier quality stay separate.</h2>
+          <figure class="architecture-large">
+            <svg viewBox="0 0 900 480" role="img" aria-labelledby="perclos-arch-title perclos-arch-desc">
+              <title id="perclos-arch-title">PERCLOS driver-fatigue pipeline</title><desc id="perclos-arch-desc">Recorded video or a live camera feeds an eye-region detector. Left and right grayscale crops go to a MobileNetV3Small classifier. Temporal and agreement rules preserve missing detections, then a rolling PERCLOS window produces a timeline, CSV data, and annotated visual output.</desc>
+              <defs><marker id="perclos-case-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#55d5cf"/></marker></defs>
+              <path class="signal-grid-line" d="M20 80H880M20 240H880M20 400H880M180 25V455M450 25V455M720 25V455"/>
+              <path class="diagram-path" d="M198 140H258M420 140H480M642 140H702" marker-end="url(#perclos-case-arrow)"/>
+              <rect class="diagram-node" x="30" y="88" width="168" height="104" rx="12"/><text class="diagram-title" x="114" y="126" text-anchor="middle">Video / camera</text><text class="diagram-note" x="114" y="152" text-anchor="middle">recorded or live frames</text><text class="diagram-note" x="114" y="173" text-anchor="middle">sampled over time</text>
+              <rect class="diagram-node diagram-node-cyan" x="258" y="88" width="162" height="104" rx="12"/><text class="diagram-title" x="339" y="126" text-anchor="middle">Eye detector</text><text class="diagram-note" x="339" y="152" text-anchor="middle">81-point landmarks</text><text class="diagram-note" x="339" y="173" text-anchor="middle">left / right crops</text>
+              <rect class="diagram-node" x="480" y="88" width="162" height="104" rx="12"/><text class="diagram-title" x="561" y="126" text-anchor="middle">Eye-state model</text><text class="diagram-note" x="561" y="152" text-anchor="middle">MobileNetV3Small</text><text class="diagram-note" x="561" y="173" text-anchor="middle">open / closed probabilities</text>
+              <rect class="diagram-node" x="702" y="88" width="168" height="104" rx="12"/><text class="diagram-title" x="786" y="126" text-anchor="middle">Decision rules</text><text class="diagram-note" x="786" y="152" text-anchor="middle">agreement + temporal</text><text class="diagram-note" x="786" y="173" text-anchor="middle">not detected stays invalid</text>
+              <path class="diagram-support" d="M786 192V276H630"/>
+              <rect class="diagram-node small" x="492" y="276" width="276" height="80" rx="10" style="stroke:#f0c86a"/><text class="diagram-title" x="630" y="308" text-anchor="middle">Rolling PERCLOS window</text><text class="diagram-note" x="630" y="333" text-anchor="middle">closed valid frames / valid detected frames</text>
+              <path class="diagram-support" d="M492 316H408M408 316V380"/>
+              <rect class="diagram-node small" x="212" y="380" width="392" height="70" rx="10"/><text class="diagram-title" x="408" y="409" text-anchor="middle">Timeline CSV + annotated frame + trend graph</text><text class="diagram-note" x="408" y="432" text-anchor="middle">inspect predictions, coverage, and temporal state</text>
+            </svg>
+            <figcaption>Missing face or eye detections are preserved as invalid rather than silently forced into open or closed.</figcaption>
+          </figure>
+        </section>
+
+        <section id="decisions" class="case-section">
+          <p class="section-label">05 / Important engineering decisions</p><h2>Research integrity shaped the pipeline.</h2>
+          <div class="decision-list">
+            <article><h3>Audit content hashes before trusting a random split</h3><p>The raw tree contains 47,236 files but only 32,932 unique SHA-256 hashes; 14,304 instances beyond the first copy are exact duplicates.</p></article>
+            <article><h3>Keep missing detection explicit</h3><p>Frames without reliable face or eye detection are invalid, not forced into an open or closed label that would bias PERCLOS.</p></article>
+            <article><h3>Preserve left and right evidence</h3><p>Separate eye predictions and agreement rules make it possible to inspect asymmetry and low-confidence cases.</p></article>
+            <article><h3>Separate classifier evaluation from the full pipeline</h3><p>A model can classify pre-cropped eyes while the end-to-end system still fails under pose, lighting, glasses, motion blur, or small-eye conditions.</p></article>
+            <article><h3>Publish code and aggregates, not restricted media</h3><p>The public-safe boundary excludes participant videos, face crops, raw restricted datasets, and private checkpoints.</p></article>
+          </div>
+        </section>
+
+        <section id="challenges" class="case-section">
+          <p class="section-label">06 / Technical challenges</p><h2>The hardest errors occur between model and environment.</h2>
+          <ul><li><strong>Duplicate leakage:</strong> exact duplicates can appear convincing in an image-level split while weakening independence.</li><li><strong>Incomplete subject identity:</strong> only 6,000 filenames expose recognized subject tokens; 41,236 files do not support a reliable subject-independent split.</li><li><strong>Detection gaps:</strong> pose, lighting, reflections, blur, and small eyes produce intervals without usable crops.</li><li><strong>Temporal aggregation:</strong> PERCLOS must operate on valid detected-eye frames while preserving coverage information.</li><li><strong>Privacy:</strong> debugging and demonstration artifacts must not expose participant media or restricted data.</li></ul>
+        </section>
+
+        <section id="testing" class="case-section">
+          <p class="section-label">07 / Testing and evaluation</p><h2>The approved evidence emphasizes auditability, not a headline accuracy.</h2>
+          <table class="test-table"><thead><tr><th>Check</th><th>Verified evidence</th></tr></thead><tbody><tr><td>Dataset inventory</td><td>47,236 labeled files across open and closed trees</td></tr><tr><td>Exact duplicate audit</td><td>32,932 unique hashes; 2,493 duplicate groups; 14,304 extra duplicate instances</td></tr><tr><td>Label conflicts</td><td>Zero exact-content conflicts across open and closed labels</td></tr><tr><td>Public-safe logic</td><td>Four unit tests for audit and PERCLOS aggregation paths</td></tr><tr><td>Input modes</td><td>Recorded-video and live-camera integration present in the research workspace</td></tr></tbody></table>
+          <p>A diagnostic classifier evaluation exists, but it is intentionally excluded from résumé and portfolio results because the checkpoint’s training manifest and split record are missing. That prevents a defensible claim of subject/source independence.</p>
+        </section>
+
+        <section id="results" class="case-section">
+          <p class="section-label">08 / Results</p><h2>The result is an auditable pipeline and visible temporal output.</h2>
+          <div class="result-panel"><div><strong>47,236</strong><span>labeled files audited in the raw tree</span></div><div><strong>32,932</strong><span>unique content hashes after exact-duplicate analysis</span></div><div><strong>2 modes</strong><span>recorded-video and live-camera output paths</span></div></div>
+          <figure class="case-image"><img src="/assets/perclos-demo.png" width="1500" height="540" loading="lazy" decoding="async" alt="Recorded driver-fatigue analysis showing separate left and right eye-state predictions, eye crops, a current PERCLOS percentage, and a rolling trend chart."><figcaption>Real recorded-video output with per-eye predictions and a rolling PERCLOS timeline.</figcaption></figure>
+          <p class="case-callout gold"><strong>Qualification:</strong> 47,236 is the number of labeled files in the audited raw tree, not the number of independent samples. Classifier accuracy, AUC, F1, sensitivity, specificity, and end-to-end FPS are not claimed here.</p>
+        </section>
+
+        <section id="limitations" class="case-section">
+          <p class="section-label">09 / Limitations</p><h2>The missing training lineage limits the conclusion.</h2>
+          <ul><li>No immutable manifest ties the candidate checkpoint to exact training, validation, and test file hashes.</li><li>Most files lack participant identity, preventing a complete subject-independent split audit.</li><li>The diagnostic subset was not reserved by a recorded pre-training protocol.</li><li>No manual video ground truth is paired with the selected full-duration output.</li><li>Several recordings contain substantial missing-detection intervals; classifier behavior and end-to-end reliability must remain separate.</li><li>The public repository excludes raw data, participant recordings, restricted face crops, and the private research package.</li></ul>
+        </section>
+
+        <section id="learning" class="case-section">
+          <p class="section-label">10 / What I learned</p><h2>A trustworthy ML result begins before model training.</h2>
+          <p>This research changed how I evaluate machine-learning systems. Dataset identity, duplicate structure, split provenance, detector coverage, and missing-output semantics can matter as much as architecture choice.</p>
+          <p>The next iteration needs a hash-locked training manifest, a pre-registered subject/source split, matched video ground truth, detector-coverage reporting, and end-to-end timing that includes every stage—not just classifier calls.</p>
+        </section>
+
+        <section id="evidence" class="case-section">
+          <p class="section-label">11 / Repository and evidence</p><h2>The public boundary is inspectable and privacy-aware.</h2>
+          <p>The public repository contains the machine-learning and PERCLOS pipeline code, setup and execution instructions, dataset references, and the public-safe project structure. The deeper audit is supported by saved aggregate JSON and claim-verification reports; restricted media is not redistributed.</p>
+          <div class="evidence-links"><a class="button button-primary" href="https://github.com/jingxuanliu1/perclos-fatigue-detection" target="_blank" rel="noopener">View public repository ↗</a><a class="button button-secondary" href="/projects.html">Back to project archive</a></div>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <nav class="project-neighbors" aria-label="More projects"><div class="section-shell"><a href="/projects/tracelab.html">← Previous: TraceLab AI</a><a href="/projects.html">All projects →</a></div></nav>
+  <footer class="site-footer"><div class="section-shell"><p>Designed and built by Jingxuan Liu. <span>© <span id="year">2026</span></span></p></div></footer>
+  <script src="/script.js" defer></script>
+</body>
+</html>
